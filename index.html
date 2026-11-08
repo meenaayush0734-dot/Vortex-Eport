@@ -249,6 +249,9 @@ function banView(){
 function tCard(t, u){
   const joined = t.players.includes(u.id);
   const full = t.players.length >= t.slots;
+  const roomBox = joined && (t.roomId || t.roomPass)
+    ? `<div class="box" style="margin-top:12px"><span class="mut">Room ID</span><b>${esc(t.roomId || '-')}</b><span class="mut" style="display:block;margin-top:8px">Password</span><b>${esc(t.roomPass || '-')}</b></div>`
+    : '';
   const pct = Math.min(100, Math.round(t.players.length / t.slots * 100));
   const btn = joined ? `<button class="gbtn sm" disabled>JOINED</button>`
     : full ? `<button class="gbtn sm" disabled>FULL</button>`
@@ -265,6 +268,7 @@ function tCard(t, u){
         <div class="box"><span class="mut">Slots</span><b>${t.players.length} / ${t.slots}</b></div>
       </div>
       <div class="bar"><i style="width:${pct}%"></i></div>
+      ${roomBox}
       <div class="row"><span class="mut">${t.fee ? 'Entry '+t.fee+' coins' : 'Free entry'}</span>${btn}</div>
     </div>
   </div>`;
@@ -377,6 +381,73 @@ function walletBox(u){
   </div>`;
 }
 
+// ----- withdraw -----
+const MIN_WD = 100;
+const getWd = () => load('vx_withdraws', []);
+const saveWd = w => save('vx_withdraws', w);
+
+function withdrawBox(u){
+  const note = S.wdDone ? `
+    <div class="note ok">Withdraw request bhej di: ${S.wdDone} coins.</div>
+    <div class="note ok">Hinglish: Withdraw request ho gayi. Ab chat banao aur apni UPI ID / details wahan bhejo.</div>
+    <div class="note ok">English: Withdraw request sent. Now open a chat and send your UPI ID / details there.</div>
+    <button class="gbtn" data-act="wdchat">CHAT BANAO</button>` : '';
+  return `
+  <div class="glass">
+    <div class="ttl" style="font-size:14px;margin-bottom:6px">WITHDRAW</div>
+    <div class="mut" style="margin-bottom:10px">Minimum ${MIN_WD} coins · Aapke paas ${coinsOf(u)} coins</div>
+    <label>Amount (coins)</label>
+    <input id="wdAmt" type="number" min="${MIN_WD}" max="${coinsOf(u)}" placeholder="${MIN_WD}">
+    <button class="gbtn" data-act="withdraw">WITHDRAW REQUEST BHEJO</button>
+    ${note}
+  </div>`;
+}
+
+function requestWithdraw(){
+  const u = me(); if (!u) return;
+  const v = Math.floor(Number(document.getElementById('wdAmt').value));
+  if (!(v >= MIN_WD)) return flash(`Minimum withdraw ${MIN_WD} coins hai.`, 'err');
+  const list = users();
+  const p = list.find(x => x.id === u.id);
+  if (v > coinsOf(p)) return flash('Itne coins nahi hain.', 'err');
+  p.coins = coinsOf(p) - v;
+  save('vx_users', list);
+  const w = getWd();
+  w.unshift({ id:'W' + Date.now().toString(36).toUpperCase(), userId:u.id, userName:u.name, amount:v, status:'pending', at:new Date().toISOString() });
+  saveWd(w);
+  S.wdDone = v;
+  flash(`${v} coins ka withdraw request ho gaya.`);
+}
+
+function decideWd(id, paid){
+  const u = me(); if (!isAdmin(u)) return;
+  const list = getWd();
+  const w = list.find(x => x.id === id);
+  if (!w || w.status !== 'pending') return;
+  if (!paid) {
+    const us = users();
+    const p = us.find(x => x.id === w.userId);
+    if (p) { p.coins = coinsOf(p) + Number(w.amount); save('vx_users', us); }
+  }
+  w.status = paid ? 'paid' : 'rejected';
+  w.decidedBy = u.name;
+  w.decidedAt = new Date().toISOString();
+  saveWd(list);
+  flash(paid ? 'Paid mark ho gaya.' : 'Reject ho gaya, coins wapas kar diye.', paid ? 'ok' : 'err');
+}
+
+function wdPanel(){
+  const list = getWd();
+  if (!list.length) return '<div class="empty">Abhi koi withdraw request nahi hai.</div>';
+  return list.map(w => `
+    <div class="glass urow">
+      <div class="row"><div><b>${esc(w.userName)}</b><div class="mut">${esc(new Date(w.at).toLocaleString('en-IN'))}</div></div>
+      <span class="badge ${w.status === 'paid' ? 'good' : w.status === 'rejected' ? 'bad' : 'warn'}">${w.status.toUpperCase()}</span></div>
+      <div class="row" style="margin-top:10px"><span class="coinchip">${ICON.coin} ${Number(w.amount)}</span>
+      ${w.status === 'pending' ? `<div class="row" style="gap:8px"><button class="abtn ok" data-act="wdpaid" data-id="${esc(w.id)}">Paid</button><button class="abtn danger" data-act="wdreject" data-id="${esc(w.id)}">Reject</button></div>` : ''}</div>
+    </div>`).join('');
+}
+
 function accountView(u){
   return `
   <h2 class="ttl">MY WALLET</h2>
@@ -385,6 +456,7 @@ function accountView(u){
     <div class="ttl" style="font-size:44px;color:var(--gold);text-shadow:0 0 22px rgba(250,204,21,.45);margin-top:6px">${coinsOf(u)}</div>
   </div>
   ${walletBox(u)}
+  ${withdrawBox(u)}
   <div class="glass">
     <div class="mut">Naam</div><b>${esc(u.name)}</b>
     <div class="mut" style="margin-top:12px">Email</div><b>${esc(u.email)}</b>
@@ -394,6 +466,19 @@ function accountView(u){
 }
 
 // ----- admin -----
+function roomRow(t){
+  return `
+    <div class="glass urow">
+      <div class="row"><div><b>${esc(t.title)}</b><div class="mut">${esc(t.game)} · ${t.players.length}/${t.slots}</div></div>
+      <button class="abtn danger" data-act="del" data-id="${esc(t.id)}">Delete</button></div>
+      <div class="grid2" style="margin-top:10px">
+        <div><label>Room ID</label><input id="rid_${esc(t.id)}" value="${esc(t.roomId || '')}" maxlength="30" style="margin:0"></div>
+        <div><label>Password</label><input id="rpw_${esc(t.id)}" value="${esc(t.roomPass || '')}" maxlength="30" style="margin:0"></div>
+      </div>
+      <button class="gbtn sm" style="margin-top:10px" data-act="roomsave" data-id="${esc(t.id)}">Room save karo</button>
+    </div>`;
+}
+
 function tourPanel(){
   const all = load('vx_tournaments', []);
   return `
@@ -414,15 +499,12 @@ function tourPanel(){
       </div>
       <label>Slots</label>
       <input name="slots" type="number" min="2" value="48">
+      <div class="grid2"><div><label>Room ID</label><input name="roomId" maxlength="30" placeholder="Room ID"></div><div><label>Password</label><input name="roomPass" maxlength="30" placeholder="Password"></div></div>
       <button class="gbtn" type="submit">PUBLISH</button>
     </form>
   </div>
   <h2 class="ttl" style="font-size:14px">SAARE TOURNAMENTS</h2>
-  ${all.length ? all.map(t => `
-    <div class="glass row">
-      <div><b>${esc(t.title)}</b><div class="mut">${esc(t.game)} · ${t.players.length}/${t.slots}</div></div>
-      <button class="abtn danger" data-act="del" data-id="${esc(t.id)}">Delete</button>
-    </div>`).join('') : '<div class="empty">Koi tournament nahi.</div>'}`;
+  ${all.length ? all.map(roomRow).join('') : '<div class="empty">Koi tournament nahi.</div>'}`;
 }
 
 function userRow(x, viewer){
@@ -504,8 +586,8 @@ function adminView(u){
     <div class="st"><b>${list.filter(x=>x.banned).length}</b><span>Banned</span></div>
     <div class="st"><b>${pendingClaims()}</b><span>Open tickets</span></div>
   </div>
-  <div class="seg">${tabBtn('tour','Tournaments')}${tabBtn('users','Users')}${tabBtn('pay','Payment')}</div>
-  ${sub==='users' ? selfCard(u) + usersPanel(u) : sub==='pay' ? payPanel() : tourPanel()}`;
+  <div class="seg">${tabBtn('tour','Tournaments')}${tabBtn('users','Users')}${tabBtn('pay','Payment')}${tabBtn('wd','Withdraws')}</div>
+  ${sub==='users' ? selfCard(u) + usersPanel(u) : sub==='pay' ? payPanel() : sub==='wd' ? wdPanel() : tourPanel()}`;
 }
 
 function shell(u){
@@ -598,10 +680,22 @@ function createT(f){
     id:'t_' + Date.now().toString(36),
     game:d.game, title:String(d.title||'').trim(), mode:d.mode, date:d.date,
     fee:Math.max(0, Math.floor(Number(d.fee)||0)), prize:Number(d.prize)||0,
-    slots:Math.max(2, Number(d.slots)||2), players:[], createdBy:u.id
+    slots:Math.max(2, Number(d.slots)||2), players:[], createdBy:u.id,
+    roomId:String(d.roomId||'').trim(), roomPass:String(d.roomPass||'').trim()
   });
   save('vx_tournaments', ts);
   flash('Tournament publish ho gaya.');
+}
+
+function saveRoom(id){
+  const u = me(); if (!isAdmin(u)) return;
+  const ts = load('vx_tournaments', []);
+  const t = ts.find(x => x.id === id); if (!t) return;
+  if (u.role !== 'owner' && t.createdBy !== u.id) return flash('Ye tournament aapne nahi banaya.', 'err');
+  t.roomId = String(document.getElementById('rid_' + id).value || '').trim();
+  t.roomPass = String(document.getElementById('rpw_' + id).value || '').trim();
+  save('vx_tournaments', ts);
+  flash('Room ID aur password save ho gaya.');
 }
 
 function delT(id){
@@ -719,6 +813,11 @@ document.addEventListener('click', e => {
   else if (a === 'game') { S.game = el.dataset.v; render(); }
   else if (a === 'join') joinT(el.dataset.id);
   else if (a === 'del') delT(el.dataset.id);
+  else if (a === 'roomsave') saveRoom(el.dataset.id);
+  else if (a === 'withdraw') requestWithdraw();
+  else if (a === 'wdchat') { S.wdDone = null; startChat(); }
+  else if (a === 'wdpaid') decideWd(el.dataset.id, true);
+  else if (a === 'wdreject') decideWd(el.dataset.id, false);
   else if (a === 'ban') toggleBan(el.dataset.id);
   else if (a === 'coins') setCoins(el.dataset.id);
   else if (a === 'selfcoins') selfCoins(el.dataset.v);
