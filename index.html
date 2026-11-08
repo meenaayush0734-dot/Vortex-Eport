@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vortex Esport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07040F;--line:rgba(167,139,250,.2);--gold:#FACC15;--red:#FF4D6D;--ok:#4ADE80;--cyan:#22D3EE;--mut:#9C92BD}
+*{box-sizing:border-box}
+body{margin:0;background:#040208;font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#F4F1FF}
+#app{max-width:420px;min-height:100vh;margin:0 auto;padding-bottom:110px;background:radial-gradient(circle at 85% -5%,rgba(124,58,237,.45),transparent 45%),radial-gradient(circle at 0% 40%,rgba(34,211,238,.12),transparent 40%),var(--bg)}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px}
+.brand{font-family:'Orbitron',sans-serif;font-weight:800;font-size:17px;letter-spacing:1.5px}
+.brand span{color:var(--cyan)}
+main{padding:0 16px}
+.ttl{font-family:'Orbitron',sans-serif;font-weight:800;letter-spacing:1px}
+h2.ttl{font-size:16px;margin:20px 0 12px;letter-spacing:1.5px}
+.mut{color:var(--mut);font-size:13px}
+.glass{background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 30px rgba(0,0,0,.4);padding:16px;margin-bottom:14px}
+.hero{background:linear-gradient(120deg,#4C1D95,#7C3AED 45%,#1D4ED8);border:0;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-50px;top:-50px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.55),transparent 70%)}
+.tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.5px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15)}
+.coinchip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(250,204,21,.12);border:1px solid rgba(250,204,21,.4);color:var(--gold);font-weight:800;font-size:13px;box-shadow:0 0 14px rgba(250,204,21,.25)}
+.pill{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:11px;font-weight:700;color:#D9D2F2;letter-spacing:.5px}
+.gbtn{height:48px;border:0;border-radius:16px;background:linear-gradient(135deg,#A855F7,#6366F1 55%,#22D3EE);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;box-shadow:0 8px 24px rgba(139,92,246,.45);padding:0 18px;cursor:pointer;font-family:inherit;width:100%}
+.gbtn.sm{height:38px;font-size:13px;padding:0 16px;width:auto;border-radius:12px}
+.gbtn:disabled{opacity:.45;box-shadow:none;cursor:default}
+.abtn{height:38px;padding:0 14px;border-radius:12px;border:1px solid rgba(167,139,250,.35);background:rgba(255,255,255,.04);color:#E9E4FF;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.abtn.danger{border-color:rgba(255,77,109,.5);color:#FF8FA3}
+.abtn:disabled{opacity:.4;cursor:default}
+.seg{display:flex;gap:6px;padding:5px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid var(--line);margin-bottom:14px}
+.seg button{flex:1;height:40px;border:0;border-radius:14px;background:transparent;color:var(--mut);font-weight:700;font-family:inherit;cursor:pointer;font-size:13px}
+.seg button.on{background:linear-gradient(135deg,#A855F7,#6366F1);color:#fff;box-shadow:0 0 16px rgba(139,92,246,.5)}
+.qa-row{display:flex;justify-content:space-between;margin:4px 0 20px}
+.qa{border:0;background:none;color:#D9D2F2;font-family:inherit;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;width:33%}
+.qc{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;background:radial-gradient(circle at 30% 25%,#C4B5FD,#7C3AED 60%,#4C1D95);box-shadow:0 0 22px rgba(139,92,246,.6),inset 0 0 0 1px rgba(255,255,255,.2)}
+.band{height:5px;background:linear-gradient(90deg,#A855F7,var(--cyan))}
+.tc{padding:0;overflow:hidden}
+.tc .in{padding:16px}
+.bar{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0 14px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#A855F7,var(--cyan));box-shadow:0 0 10px #A855F7}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box{background:rgba(255,255,255,.04);border:1px solid rgba(167,139,250,.18);border-radius:16px;padding:12px}
+.box b{display:block;font-family:'Orbitron',sans-serif;font-size:17px;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.st{background:rgba(255,255,255,.04);border:1px solid rgba(167,139,250,.18);border-radius:16px;padding:12px;text-align:center}
+.st b{display:block;font-family:'Orbitron',sans-serif;font-size:20px}
+.st span{font-size:11px;color:var(--mut)}
+.badge{font-size:10px;font-weight:800;letter-spacing:1px;padding:4px 8px;border-radius:999px}
+.badge.good{background:rgba(34,197,94,.15);color:var(--ok)}
+.badge.bad{background:rgba(255,77,109,.15);color:#FF8FA3}
+label{display:block;font-size:12px;color:var(--mut);margin:0 0 6px;font-weight:600}
+input,select{width:100%;height:48px;border-radius:14px;border:1px solid rgba(167,139,250,.25);background:rgba(255,255,255,.05);color:#fff;padding:0 14px;font-size:15px;font-family:inherit;margin-bottom:12px;color-scheme:dark}
+input.inp{width:110px;height:40px;margin:0;font-size:14px}
+select.sel{width:auto;height:38px;margin:0;padding:0 10px;font-size:13px}
+.note{padding:10px 14px;border-radius:14px;font-size:13px;margin-bottom:12px;font-weight:600}
+.note.ok{background:rgba(34,197,94,.12);color:var(--ok);border:1px solid rgba(34,197,94,.3)}
+.note.err{background:rgba(255,77,109,.12);color:#FF8FA3;border:1px solid rgba(255,77,109,.3)}
+.errbox{color:#FF8FA3;font-size:13px;min-height:18px;margin:0 0 10px}
+.urow{padding:14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.empty{text-align:center;color:var(--mut);padding:30px 0}
+.center{min-height:100vh;display:flex;align-items:center;padding:20px}
+nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;height:66px;border-radius:24px;background:rgba(18,12,34,.88);backdrop-filter:blur(12px);border:1px solid var(--line);display:flex;padding:6px;gap:4px;z-index:5}
+nav button{flex:1;border:0;background:none;color:#8F86B0;font-family:inherit;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:18px;cursor:pointer}
+nav button i{font-style:normal;font-size:18px}
+.ic{width:22px;height:22px;flex:none;display:block}
+.coinchip .ic{width:15px;height:15px}
+.qc .ic{width:28px;height:28px;color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,.5))}
+nav button .ic{width:22px;height:22px}
+nav button.on{color:#fff;background:linear-gradient(135deg,rgba(168,85,247,.5),rgba(34,211,238,.25));box-shadow:0 0 16px rgba(139,92,246,.45)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- storage (localStorage, memory fallback) ----------
+const MEM = {};
+const load = (k, d) => {
+  let raw = null;
+  try { raw = localStorage.getItem(k); } catch (e) { raw = MEM[k] ?? null; }
+  if (raw == null) return d;
+  try { return JSON.parse(raw); } catch (e) { return d; }
+};
+const save = (k, v) => {
+  const s = JSON.stringify(v);
+  MEM[k] = s;
+  try { localStorage.setItem(k, s); } catch (e) {}
+};
+
+// ---------- seed ----------
+const OWNER = { id:'u_owner', name:'Vortex Esport', email:'meenaayush0734@gmail.com', password:'anshu@1122', role:'owner', coins:0, banned:false };
+function seed(){
+  const users = load('vx_users', []);
+  if (!users.some(u => u.role === 'owner')) users.unshift(OWNER);
+  save('vx_users', users);
+  if (!load('vx_tournaments', null)) {
+    save('vx_tournaments', [{
+      id:'t_seed', game:'Free Fire MAX', title:'Weekend Squad Showdown', mode:'Squad',
+      date:'2026-11-14T20:00', fee:0, prize:5000, slots:48, players:[], createdBy:'u_owner'
+    }]);
+  }
+}
+
+// ---------- state & helpers ----------
+let S = { tab:'login', page:'play', sub:'tour', game:'Free Fire India', flash:null };
+const users = () => load('vx_users', []);
+const me = () => {
+  const id = load('vx_session', null);
+  return users().find(u => u.id === id) || null;
+};
+const SV = p => `<svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICON = {
+  play: SV('<path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7A4.7 4.7 0 0 0 2 9.7v4.6A4.7 4.7 0 0 0 6.7 19c1.6 0 2.4-.8 3.3-1.8l.9-1h1.2l.9 1c.9 1 1.7 1.8 3.3 1.8a4.7 4.7 0 0 0 4.7-4.7V9.7A4.7 4.7 0 0 0 17.3 5z"/>'),
+  trophy: SV('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>'),
+  wallet: SV('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>'),
+  shield: SV('<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'),
+  coin: SV('<circle cx="12" cy="12" r="8"/><path d="M14.5 9.5c-.4-.7-1.2-1-2.5-1-1.5 0-2.5.7-2.5 1.8s1 1.5 2.5 1.7 2.5.6 2.5 1.8-1 1.8-2.5 1.8c-1.3 0-2.1-.3-2.5-1M12 6.5v1.2M12 16.3v1.2"/>'),
+  star: SV('<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2-4.5-4.4 6.2-.9z"/>'),
+  user: SV('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>')
+};
+const coinsOf = u => Number(u.coins) || 0;
+const roleLabel = r => ({ owner:'Owner', admin:'Admin', player:'Player' }[r] || 'Player');
+const isAdmin = u => u && (u.role === 'owner' || u.role === 'admin');
+const fmtDate = d => d ? new Date(d).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : 'Date TBA';
+// owner: manage everyone except owner; admin: manage players only
+const canManage = (viewer, t) => {
+  if (t.role === 'owner' || t.id === viewer.id) return false;
+  if (viewer.role === 'owner') return true;
+  return viewer.role === 'admin' && t.role === 'player';
+};
+const flash = (m, t = 'ok') => { S.flash = { m, t }; render(); };
+
+// ---------- views ----------
+function authView(){
+  const isLogin = S.tab === 'login';
+  return `
+  <header><div class="brand">VORTEX <span>ESPORT</span></div><span class="pill">FF INDIA · MAX</span></header>
+  <main style="padding-top:18px">
+    <div class="glass hero" style="padding:22px">
+      <span class="tag">TOURNAMENT PLATFORM</span>
+      <div class="ttl" style="font-size:24px;margin:12px 0 6px">READY TO WIN?</div>
+      <div style="opacity:.9;font-size:14px">Ek baar register karo, login is device par save rahega.</div>
+    </div>
+    <div class="seg">
+      <button data-act="tab" data-v="login" class="${isLogin?'on':''}">Login</button>
+      <button data-act="tab" data-v="register" class="${!isLogin?'on':''}">Register</button>
+    </div>
+    <form id="authForm" class="glass">
+      ${isLogin ? '' : `<label>Naam / Team naam</label><input name="name" required maxlength="24" placeholder="Apna naam">`}
+      <label>Email</label>
+      <input name="email" type="email" required placeholder="you@gmail.com">
+      <label>Password</label>
+      <input name="password" type="password" required minlength="4" placeholder="Password">
+      <div class="errbox" id="err"></div>
+      <button class="gbtn" type="submit">${isLogin ? 'LOGIN' : 'REGISTER & START'}</button>
+    </form>
+  </main>`;
+}
+
+function banView(){
+  return `<div class="center" style="width:100%"><div class="glass" style="text-align:center;padding:28px;width:100%">
+    <div class="ttl" style="color:var(--red);font-size:18px">ACCOUNT BANNED</div>
+    <p class="mut" style="margin:12px 0 18px">Aapka account admin ne ban kar diya hai. Madad ke liye owner se contact karo.</p>
+    <button class="abtn" data-act="logout" style="width:100%">Logout</button>
+  </div></div>`;
+}
+
+function tCard(t, u){
+  const joined = t.players.includes(u.id);
+  const full = t.players.length >= t.slots;
+  const pct = Math.min(100, Math.round(t.players.length / t.slots * 100));
+  const btn = joined ? `<button class="gbtn sm" disabled>JOINED</button>`
+    : full ? `<button class="gbtn sm" disabled>FULL</button>`
+    : `<button class="gbtn sm" data-act="join" data-id="${esc(t.id)}">JOIN</button>`;
+  return `
+  <div class="glass tc">
+    <div class="band"></div>
+    <div class="in">
+      <div class="row"><span class="tag">${esc(t.mode)} · ${esc(t.game)}</span><span class="coinchip">${ICON.coin} ${Number(t.fee)||0}</span></div>
+      <div class="ttl" style="font-size:17px;margin:12px 0 4px">${esc(t.title)}</div>
+      <div class="mut">${esc(fmtDate(t.date))}</div>
+      <div class="grid2" style="margin:12px 0 0">
+        <div class="box"><span class="mut">Prize pool</span><b style="color:var(--gold)">₹${Number(t.prize).toLocaleString('en-IN')}</b></div>
+        <div class="box"><span class="mut">Slots</span><b>${t.players.length} / ${t.slots}</b></div>
+      </div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="row"><span class="mut">${t.fee ? 'Entry '+t.fee+' coins' : 'Free entry'}</span>${btn}</div>
+    </div>
+  </div>`;
+}
+
+function qa(icon, label, page){
+  return `<button class="qa" data-act="nav" data-v="${page}"><span class="qc">${icon}</span><span>${label}</span></button>`;
+}
+
+function playView(u){
+  const ts = load('vx_tournaments', []).filter(t => t.game === S.game);
+  return `
+  <div class="glass hero" style="padding:22px">
+    <span class="tag">LIVE · ${esc(S.game)}</span>
+    <div class="ttl" style="font-size:26px;margin:12px 0 6px;line-height:1.2">JOIN THE<br>BATTLE</div>
+    <div style="font-size:14px;opacity:.9">Coins se entry lo, slot pakdo, prize jeeto.</div>
+  </div>
+  <div class="qa-row">
+    ${qa(ICON.trophy,'My Matches','matches')}
+    ${qa(ICON.wallet,'My Wallet','account')}
+    ${isAdmin(u) ? qa(ICON.shield,'Admin','admin') : qa(ICON.star,'Top Play','matches')}
+  </div>
+  <div class="seg">
+    ${['Free Fire India','Free Fire MAX'].map(g => `<button data-act="game" data-v="${g}" class="${S.game===g?'on':''}">${g}</button>`).join('')}
+  </div>
+  ${ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Is game ke liye abhi koi tournament nahi.</div>'}`;
+}
+
+function matchesView(u){
+  const ts = load('vx_tournaments', []).filter(t => t.players.includes(u.id));
+  return `<h2 class="ttl">MY MATCHES</h2>` +
+    (ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Abhi tak kisi tournament me join nahi kiya.</div>');
+}
+
+function tourPanel(){
+  const all = load('vx_tournaments', []);
+  return `
+  <div class="glass">
+    <div class="ttl" style="font-size:14px;margin-bottom:12px">NAYA TOURNAMENT</div>
+    <form id="tForm">
+      <label>Tournament naam</label>
+      <input name="title" required maxlength="50" placeholder="Sunday Squad Cup">
+      <label>Game</label>
+      <select name="game"><option>Free Fire India</option><option>Free Fire MAX</option></select>
+      <label>Mode</label>
+      <select name="mode"><option>Solo</option><option>Duo</option><option>Squad</option><option>Clash Squad</option></select>
+      <label>Date & time</label>
+      <input name="date" type="datetime-local" required>
+      <div class="grid2">
+        <div><label>Entry (coins)</label><input name="fee" type="number" min="0" value="0"></div>
+        <div><label>Prize pool (₹)</label><input name="prize" type="number" min="0" value="0"></div>
+      </div>
+      <label>Slots</label>
+      <input name="slots" type="number" min="2" value="48">
+      <button class="gbtn" type="submit">PUBLISH</button>
+    </form>
+  </div>
+  <h2 class="ttl" style="font-size:14px">SAARE TOURNAMENTS</h2>
+  ${all.length ? all.map(t => `
+    <div class="glass row">
+      <div><b>${esc(t.title)}</b><div class="mut">${esc(t.game)} · ${t.players.length}/${t.slots}</div></div>
+      <button class="abtn danger" data-act="del" data-id="${esc(t.id)}">Delete</button>
+    </div>`).join('') : '<div class="empty">Koi tournament nahi.</div>'}`;
+}
+
+function userRow(x, viewer){
+  const can = canManage(viewer, x);
+  const roleCtl = viewer.role === 'owner'
+    ? `<select class="sel" data-act="role" data-id="${esc(x.id)}">
+         <option value="player" ${x.role==='player'?'selected':''}>Player</option>
+         <option value="admin" ${x.role==='admin'?'selected':''}>Admin</option>
+       </select>`
+    : `<span class="mut">${roleLabel(x.role)}</span>`;
+  return `
+  <div class="glass urow">
+    <div class="row">
+      <div><b>${esc(x.name)}</b><div class="mut">${esc(x.email)}</div></div>
+      <span class="badge ${x.banned?'bad':'good'}">${x.banned?'BANNED':'ACTIVE'}</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="coinchip">${ICON.coin} ${coinsOf(x)}</span>${roleCtl}
+    </div>
+    <div class="row" style="margin-top:12px">
+      <input class="inp" id="c_${esc(x.id)}" type="number" min="0" value="${coinsOf(x)}" ${can?'':'disabled'}>
+      <button class="abtn" data-act="coins" data-id="${esc(x.id)}" ${can?'':'disabled'}>Set coins</button>
+      <button class="abtn ${x.banned?'':'danger'}" data-act="ban" data-id="${esc(x.id)}" ${can?'':'disabled'}>${x.banned?'Unban':'Ban'}</button>
+    </div>
+  </div>`;
+}
+
+function usersPanel(u){
+  const list = users().filter(x => x.role !== 'owner');
+  return `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: sab users ko ban/coins set kar sakte ho.' : 'Admin: players ko ban/coins set kar sakte ho.'}</div>` +
+    (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">Abhi koi registered user nahi hai.</div>');
+}
+
+function adminView(u){
+  const list = users();
+  const ts = load('vx_tournaments', []);
+  return `
+  <h2 class="ttl">ADMIN PANEL</h2>
+  <div class="stats">
+    <div class="st"><b>${list.filter(x=>x.role!=='owner').length}</b><span>Users</span></div>
+    <div class="st"><b>${ts.length}</b><span>Tournaments</span></div>
+    <div class="st"><b>${list.filter(x=>x.banned).length}</b><span>Banned</span></div>
+  </div>
+  <div class="seg">
+    <button data-act="sub" data-v="tour" class="${S.sub==='tour'?'on':''}">Tournaments</button>
+    <button data-act="sub" data-v="users" class="${S.sub==='users'?'on':''}">Users & Coins</button>
+  </div>
+  ${S.sub === 'users' ? usersPanel(u) : tourPanel(u)}`;
+}
+
+function accountView(u){
+  return `
+  <h2 class="ttl">MY ACCOUNT</h2>
+  <div class="glass" style="text-align:center;padding:24px">
+    <div class="mut">Your Coins</div>
+    <div class="ttl" style="font-size:44px;color:var(--gold);text-shadow:0 0 22px rgba(250,204,21,.45);margin-top:6px">${coinsOf(u)}</div>
+  </div>
+  <div class="glass">
+    <div class="mut">Naam</div><b>${esc(u.name)}</b>
+    <div class="mut" style="margin-top:12px">Email</div><b>${esc(u.email)}</b>
+    <div class="mut" style="margin-top:12px">Role</div><b>${roleLabel(u.role)}</b>
+  </div>
+  <button class="abtn" data-act="logout" style="width:100%;height:48px">Logout</button>`;
+}
+
+function shell(u){
+  const tabs = [['play',ICON.play,'Play'],['matches',ICON.trophy,'Matches']];
+  if (isAdmin(u)) tabs.push(['admin',ICON.shield,'Admin']);
+  tabs.push(['account',ICON.user,'Account']);
+
+  let body;
+  if (S.page === 'play') body = playView(u);
+  else if (S.page === 'matches') body = matchesView(u);
+  else if (S.page === 'admin' && isAdmin(u)) body = adminView(u);
+  else body = accountView(u);
+
+  const note = S.flash ? `<div class="note ${S.flash.t}">${esc(S.flash.m)}</div>` : '';
+  S.flash = null;
+  return `
+  <header>
+    <div class="brand">VORTEX <span>ESPORT</span></div>
+    <div class="row" style="gap:8px;justify-content:flex-end">
+      <span class="coinchip">${ICON.coin} ${coinsOf(u)}</span>
+      <span class="pill">${roleLabel(u.role).toUpperCase()}</span>
+    </div>
+  </header>
+  <main>${note}${body}</main>
+  <nav>${tabs.map(([k,ic,l]) => `<button data-act="nav" data-v="${k}" class="${S.page===k?'on':''}"><i>${ic}</i>${l}</button>`).join('')}</nav>`;
+}
+
+function render(){
+  const u = me();
+  let html;
+  if (!u) html = authView();
+  else if (u.banned && u.role !== 'owner') html = banView();
+  else html = shell(u);
+  $('#app').innerHTML = html;
+}
+
+// ---------- actions ----------
+function authSubmit(f){
+  const d = Object.fromEntries(new FormData(f));
+  const email = String(d.email || '').trim().toLowerCase();
+  const pass = String(d.password || '');
+  const list = users();
+  const setErr = m => { const e = $('#err'); if (e) e.textContent = m; };
+
+  if (S.tab === 'register') {
+    if (list.some(u => u.email === email)) return setErr('Ye email already registered hai, Login karo.');
+    const u = { id:'u_' + Date.now().toString(36), name:String(d.name||'').trim(), email, password:pass, role:'player', coins:0, banned:false };
+    list.push(u);
+    save('vx_users', list);
+    save('vx_session', u.id);
+  } else {
+    const u = list.find(x => x.email === email && x.password === pass);
+    if (!u) return setErr('Email ya password galat hai.');
+    save('vx_session', u.id);
+  }
+  S.page = 'play';
+  render();
+}
+
+function joinT(id){
+  const u = me(); if (!u) return;
+  const ts = load('vx_tournaments', []);
+  const t = ts.find(x => x.id === id);
+  if (!t || t.players.includes(u.id)) return;
+  if (t.players.length >= t.slots) return flash('Slots full ho gaye hain.', 'err');
+  const list = users();
+  const p = list.find(x => x.id === u.id);
+  if (coinsOf(p) < (Number(t.fee) || 0)) return flash(`Coins kam hain. Entry ${t.fee} coins hai.`, 'err');
+  p.coins = coinsOf(p) - (Number(t.fee) || 0);
+  t.players.push(u.id);
+  save('vx_users', list);
+  save('vx_tournaments', ts);
+  flash('Tournament join ho gaya!');
+}
+
+function createT(f){
+  const u = me(); if (!isAdmin(u)) return;
+  const d = Object.fromEntries(new FormData(f));
+  const ts = load('vx_tournaments', []);
+  ts.unshift({
+    id:'t_' + Date.now().toString(36),
+    game:d.game, title:String(d.title||'').trim(), mode:d.mode, date:d.date,
+    fee:Math.max(0, Math.floor(Number(d.fee)||0)), prize:Number(d.prize)||0,
+    slots:Math.max(2, Number(d.slots)||2), players:[], createdBy:u.id
+  });
+  save('vx_tournaments', ts);
+  flash('Tournament publish ho gaya.');
+}
+
+function delT(id){
+  const u = me(); if (!isAdmin(u)) return;
+  const ts = load('vx_tournaments', []);
+  const t = ts.find(x => x.id === id);
+  if (!t || (u.role !== 'owner' && t.createdBy !== u.id)) return;
+  save('vx_tournaments', ts.filter(x => x.id !== id));
+  flash('Tournament delete ho gaya.');
+}
+
+function setRole(id, role){
+  const u = me(); if (!u || u.role !== 'owner') return;
+  const list = users();
+  const t = list.find(x => x.id === id);
+  if (!t || t.role === 'owner') return;
+  t.role = role === 'admin' ? 'admin' : 'player';
+  save('vx_users', list);
+  flash(`${t.name} ab ${t.role === 'admin' ? 'Admin' : 'Player'} hai.`);
+}
+
+function toggleBan(id){
+  const u = me(); if (!u) return;
+  const list = users();
+  const t = list.find(x => x.id === id);
+  if (!t || !canManage(u, t)) return;
+  t.banned = !t.banned;
+  save('vx_users', list);
+  flash(`${t.name} ${t.banned ? 'ban ho gaya' : 'unban ho gaya'}.`, t.banned ? 'err' : 'ok');
+}
+
+function setCoins(id){
+  const u = me(); if (!u) return;
+  const list = users();
+  const t = list.find(x => x.id === id);
+  if (!t || !canManage(u, t)) return;
+  const v = document.getElementById('c_' + id);
+  const n = Math.max(0, Math.floor(Number(v && v.value) || 0));
+  t.coins = n;
+  save('vx_users', list);
+  flash(`${t.name} ke coins ${n} set ho gaye.`);
+}
+
+// ---------- events ----------
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const a = el.dataset.act;
+  if (a === 'tab') { S.tab = el.dataset.v; render(); }
+  else if (a === 'nav') { S.page = el.dataset.v; if (S.page === 'admin') S.sub = S.sub || 'tour'; render(); }
+  else if (a === 'sub') { S.sub = el.dataset.v; render(); }
+  else if (a === 'game') { S.game = el.dataset.v; render(); }
+  else if (a === 'join') joinT(el.dataset.id);
+  else if (a === 'del') delT(el.dataset.id);
+  else if (a === 'ban') toggleBan(el.dataset.id);
+  else if (a === 'coins') setCoins(el.dataset.id);
+  else if (a === 'logout') { save('vx_session', null); S.page = 'play'; S.tab = 'login'; render(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.act === 'role') setRole(el.dataset.id, el.value);
+});
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'authForm') authSubmit(e.target);
+  else if (e.target.id === 'tForm') createT(e.target);
+});
+
+// ---------- start ----------
+seed();
+render();
+</script>
+</body>
+</html>
