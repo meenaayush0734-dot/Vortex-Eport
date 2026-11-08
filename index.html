@@ -6,15 +6,15 @@
 <title>Vortex Esport</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7C3AED">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{--bg:#07040F;--line:rgba(167,139,250,.2);--gold:#FACC15;--red:#FF4D6D;--ok:#4ADE80;--cyan:#22D3EE;--mut:#9C92BD}
 *{box-sizing:border-box}
 body{margin:0;background:#040208;font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#F4F1FF}
 #app{max-width:420px;min-height:100vh;margin:0 auto;padding-bottom:110px;background:radial-gradient(circle at 85% -5%,rgba(124,58,237,.45),transparent 45%),radial-gradient(circle at 0% 40%,rgba(34,211,238,.12),transparent 40%),var(--bg)}
-header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px;gap:8px}
 .brand{font-family:'Orbitron',sans-serif;font-weight:800;font-size:17px;letter-spacing:1.5px}
 .brand span{color:var(--cyan)}
 main{padding:0 16px}
@@ -27,18 +27,20 @@ h2.ttl{font-size:16px;margin:20px 0 12px;letter-spacing:1.5px}
 .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:1.5px;padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15)}
 .coinchip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:rgba(250,204,21,.12);border:1px solid rgba(250,204,21,.4);color:var(--gold);font-weight:800;font-size:13px;box-shadow:0 0 14px rgba(250,204,21,.25)}
 .pill{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:11px;font-weight:700;color:#D9D2F2;letter-spacing:.5px}
-.gbtn{height:48px;border:0;border-radius:16px;background:linear-gradient(135deg,#A855F7,#6366F1 55%,#22D3EE);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;box-shadow:0 8px 24px rgba(139,92,246,.45);padding:0 18px;cursor:pointer;font-family:inherit;width:100%}
+.gbtn{height:48px;border:0;border-radius:16px;background:linear-gradient(135deg,#A855F7,#6366F1 55%,#22D3EE);color:#fff;font-weight:800;font-size:15px;letter-spacing:.5px;box-shadow:0 8px 24px rgba(139,92,246,.45);padding:0 18px;cursor:pointer;font-family:inherit;width:100%;display:flex;align-items:center;justify-content:center;text-decoration:none}
 .gbtn.sm{height:38px;font-size:13px;padding:0 16px;width:auto;border-radius:12px}
 .gbtn:disabled{opacity:.45;box-shadow:none;cursor:default}
-.abtn{height:38px;padding:0 14px;border-radius:12px;border:1px solid rgba(167,139,250,.35);background:rgba(255,255,255,.04);color:#E9E4FF;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.abtn{height:38px;padding:0 14px;border-radius:12px;border:1px solid rgba(167,139,250,.35);background:rgba(255,255,255,.04);color:#E9E4FF;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 .abtn.danger{border-color:rgba(255,77,109,.5);color:#FF8FA3}
+.abtn.ok{border-color:rgba(34,197,94,.5);color:var(--ok)}
 .abtn:disabled{opacity:.4;cursor:default}
 .seg{display:flex;gap:6px;padding:5px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid var(--line);margin-bottom:14px}
 .seg button{flex:1;height:40px;border:0;border-radius:14px;background:transparent;color:var(--mut);font-weight:700;font-family:inherit;cursor:pointer;font-size:13px}
 .seg button.on{background:linear-gradient(135deg,#A855F7,#6366F1);color:#fff;box-shadow:0 0 16px rgba(139,92,246,.5)}
 .qa-row{display:flex;justify-content:space-between;margin:4px 0 20px}
 .qa{border:0;background:none;color:#D9D2F2;font-family:inherit;font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;width:33%}
-.qc{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;background:radial-gradient(circle at 30% 25%,#C4B5FD,#7C3AED 60%,#4C1D95);box-shadow:0 0 22px rgba(139,92,246,.6),inset 0 0 0 1px rgba(255,255,255,.2)}
+.qc{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 25%,#C4B5FD,#7C3AED 60%,#4C1D95);box-shadow:0 0 22px rgba(139,92,246,.6),inset 0 0 0 1px rgba(255,255,255,.2)}
+.qc .ic{width:28px;height:28px;color:#fff}
 .band{height:5px;background:linear-gradient(90deg,#A855F7,var(--cyan))}
 .tc{padding:0;overflow:hidden}
 .tc .in{padding:16px}
@@ -47,15 +49,18 @@ h2.ttl{font-size:16px;margin:20px 0 12px;letter-spacing:1.5px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .box{background:rgba(255,255,255,.04);border:1px solid rgba(167,139,250,.18);border-radius:16px;padding:12px}
 .box b{display:block;font-family:'Orbitron',sans-serif;font-size:17px;margin-top:4px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.st{background:rgba(255,255,255,.04);border:1px solid rgba(167,139,250,.18);border-radius:16px;padding:12px;text-align:center}
-.st b{display:block;font-family:'Orbitron',sans-serif;font-size:20px}
-.st span{font-size:11px;color:var(--mut)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.st{background:rgba(255,255,255,.04);border:1px solid rgba(167,139,250,.18);border-radius:16px;padding:10px 6px;text-align:center}
+.st b{display:block;font-family:'Orbitron',sans-serif;font-size:18px}
+.st span{font-size:10px;color:var(--mut)}
 .badge{font-size:10px;font-weight:800;letter-spacing:1px;padding:4px 8px;border-radius:999px}
 .badge.good{background:rgba(34,197,94,.15);color:var(--ok)}
 .badge.bad{background:rgba(255,77,109,.15);color:#FF8FA3}
+.badge.warn{background:rgba(250,204,21,.15);color:var(--gold)}
 label{display:block;font-size:12px;color:var(--mut);margin:0 0 6px;font-weight:600}
-input,select{width:100%;height:48px;border-radius:14px;border:1px solid rgba(167,139,250,.25);background:rgba(255,255,255,.05);color:#fff;padding:0 14px;font-size:15px;font-family:inherit;margin-bottom:12px;color-scheme:dark}
+input,select,textarea{width:100%;height:48px;border-radius:14px;border:1px solid rgba(167,139,250,.25);background:rgba(255,255,255,.05);color:#fff;padding:0 14px;font-size:15px;font-family:inherit;margin-bottom:12px;color-scheme:dark}
+textarea{height:auto;min-height:44px;padding:10px 14px;resize:none;margin-bottom:8px}
+input[type=file]{height:auto;padding:10px;font-size:13px}
 input.inp{width:110px;height:40px;margin:0;font-size:14px}
 select.sel{width:auto;height:38px;margin:0;padding:0 10px;font-size:13px}
 .note{padding:10px 14px;border-radius:14px;font-size:13px;margin-bottom:12px;font-weight:600}
@@ -66,14 +71,24 @@ select.sel{width:auto;height:38px;margin:0;padding:0 10px;font-size:13px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .empty{text-align:center;color:var(--mut);padding:30px 0}
 .center{min-height:100vh;display:flex;align-items:center;padding:20px}
+.qrwrap{background:#fff;border-radius:16px;padding:12px;display:flex;justify-content:center;margin:10px 0}
+.bubble{max-width:82%;padding:10px 12px;border-radius:16px;margin-bottom:8px;font-size:14px;line-height:1.45;word-wrap:break-word;white-space:pre-wrap}
+.bubble.me{margin-left:auto;background:linear-gradient(135deg,#A855F7,#6366F1);color:#fff;border-bottom-right-radius:4px}
+.bubble.them{background:rgba(255,255,255,.06);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bubble img{width:100%;border-radius:12px;margin-top:6px;display:block}
+.bubble .who{font-size:11px;opacity:.75;margin-bottom:4px;font-weight:700}
+.sys{text-align:center;font-size:12px;color:var(--mut);margin:10px 0}
+.claim{border:1px solid rgba(250,204,21,.45);border-radius:14px;padding:10px;background:rgba(250,204,21,.06)}
+.claim .btns{display:flex;gap:8px;margin-top:10px}
+.claim .btns button{flex:1}
+.thread{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:16px;margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--line);width:100%;color:inherit;font-family:inherit;text-align:left}
 nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;height:66px;border-radius:24px;background:rgba(18,12,34,.88);backdrop-filter:blur(12px);border:1px solid var(--line);display:flex;padding:6px;gap:4px;z-index:5}
 nav button{flex:1;border:0;background:none;color:#8F86B0;font-family:inherit;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:18px;cursor:pointer}
 nav button i{font-style:normal;font-size:18px}
+nav button.on{color:#fff;background:linear-gradient(135deg,rgba(168,85,247,.5),rgba(34,211,238,.25));box-shadow:0 0 16px rgba(139,92,246,.45)}
 .ic{width:22px;height:22px;flex:none;display:block}
 .coinchip .ic{width:15px;height:15px}
-.qc .ic{width:28px;height:28px;color:#fff;filter:drop-shadow(0 0 6px rgba(255,255,255,.5))}
 nav button .ic{width:22px;height:22px}
-nav button.on{color:#fff;background:linear-gradient(135deg,rgba(168,85,247,.5),rgba(34,211,238,.25));box-shadow:0 0 16px rgba(139,92,246,.45)}
 </style>
 </head>
 <body>
@@ -83,7 +98,7 @@ nav button.on{color:#fff;background:linear-gradient(135deg,rgba(168,85,247,.5),r
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// ---------- storage (localStorage, memory fallback) ----------
+// ---------- storage (localStorage with memory fallback) ----------
 const MEM = {};
 const load = (k, d) => {
   let raw = null;
@@ -95,6 +110,19 @@ const save = (k, v) => {
   const s = JSON.stringify(v);
   MEM[k] = s;
   try { localStorage.setItem(k, s); } catch (e) {}
+};
+
+// ---------- icons ----------
+const SV = p => `<svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICON = {
+  play: SV('<path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7A4.7 4.7 0 0 0 2 9.7v4.6A4.7 4.7 0 0 0 6.7 19c1.6 0 2.4-.8 3.3-1.8l.9-1h1.2l.9 1c.9 1 1.7 1.8 3.3 1.8a4.7 4.7 0 0 0 4.7-4.7V9.7A4.7 4.7 0 0 0 17.3 5z"/>'),
+  trophy: SV('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>'),
+  chat: SV('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'),
+  shield: SV('<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'),
+  coin: SV('<circle cx="12" cy="12" r="8"/><path d="M14.5 9.5c-.4-.7-1.2-1-2.5-1-1.5 0-2.5.7-2.5 1.8s1 1.5 2.5 1.7 2.5.6 2.5 1.8-1 1.8-2.5 1.8c-1.3 0-2.1-.3-2.5-1M12 6.5v1.2M12 16.3v1.2"/>'),
+  star: SV('<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2-4.5-4.4 6.2-.9z"/>'),
+  wallet: SV('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>'),
+  user: SV('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>')
 };
 
 // ---------- seed ----------
@@ -109,36 +137,68 @@ function seed(){
       date:'2026-11-14T20:00', fee:0, prize:5000, slots:48, players:[], createdBy:'u_owner'
     }]);
   }
+  if (!load('vx_settings', null)) save('vx_settings', { upiId:'', upiName:'Vortex Esport' });
 }
 
 // ---------- state & helpers ----------
-let S = { tab:'login', page:'play', sub:'tour', game:'Free Fire India', flash:null };
+let S = { tab:'login', page:'play', sub:'tour', game:'Free Fire India', flash:null, qrAmt:0, claimAmt:0, claimOpen:false, chatWith:null };
 const users = () => load('vx_users', []);
+const getChats = () => load('vx_chats', {});
+const saveChats = c => save('vx_chats', c);
+const getSet = () => load('vx_settings', { upiId:'', upiName:'Vortex Esport' });
 const me = () => {
   const id = load('vx_session', null);
   return users().find(u => u.id === id) || null;
 };
-const SV = p => `<svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
-const ICON = {
-  play: SV('<path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7A4.7 4.7 0 0 0 2 9.7v4.6A4.7 4.7 0 0 0 6.7 19c1.6 0 2.4-.8 3.3-1.8l.9-1h1.2l.9 1c.9 1 1.7 1.8 3.3 1.8a4.7 4.7 0 0 0 4.7-4.7V9.7A4.7 4.7 0 0 0 17.3 5z"/>'),
-  trophy: SV('<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>'),
-  wallet: SV('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16 14.5h2"/>'),
-  shield: SV('<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'),
-  coin: SV('<circle cx="12" cy="12" r="8"/><path d="M14.5 9.5c-.4-.7-1.2-1-2.5-1-1.5 0-2.5.7-2.5 1.8s1 1.5 2.5 1.7 2.5.6 2.5 1.8-1 1.8-2.5 1.8c-1.3 0-2.1-.3-2.5-1M12 6.5v1.2M12 16.3v1.2"/>'),
-  star: SV('<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2-4.5-4.4 6.2-.9z"/>'),
-  user: SV('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>')
-};
 const coinsOf = u => Number(u.coins) || 0;
 const roleLabel = r => ({ owner:'Owner', admin:'Admin', player:'Player' }[r] || 'Player');
-const isAdmin = u => u && (u.role === 'owner' || u.role === 'admin');
+const isAdmin = u => !!u && (u.role === 'owner' || u.role === 'admin');
 const fmtDate = d => d ? new Date(d).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : 'Date TBA';
-// owner: manage everyone except owner; admin: manage players only
 const canManage = (viewer, t) => {
   if (t.role === 'owner' || t.id === viewer.id) return false;
   if (viewer.role === 'owner') return true;
   return viewer.role === 'admin' && t.role === 'player';
 };
 const flash = (m, t = 'ok') => { S.flash = { m, t }; render(); };
+const upiLink = amt => {
+  const s = getSet();
+  return `upi://pay?pa=${encodeURIComponent(s.upiId)}&pn=${encodeURIComponent(s.upiName || 'Vortex Esport')}&am=${amt}&cu=INR&tn=${encodeURIComponent('Vortex coins')}`;
+};
+const pendingClaims = () => {
+  const c = getChats(); let n = 0;
+  Object.values(c).forEach(th => (th.messages || []).forEach(m => { if (m.type === 'claim' && m.status === 'pending') n++; }));
+  return n;
+};
+
+// image compress (keeps localStorage small)
+function compress(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 900;
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = rej;
+      img.src = r.result;
+    };
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ---------- chat data ----------
+function postMsg(uid, msg){
+  const c = getChats();
+  c[uid] = c[uid] || { messages: [] };
+  c[uid].messages.push({ id:'m' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), at:new Date().toISOString(), ...msg });
+  saveChats(c);
+}
 
 // ---------- views ----------
 function authView(){
@@ -171,7 +231,7 @@ function banView(){
   return `<div class="center" style="width:100%"><div class="glass" style="text-align:center;padding:28px;width:100%">
     <div class="ttl" style="color:var(--red);font-size:18px">ACCOUNT BANNED</div>
     <p class="mut" style="margin:12px 0 18px">Aapka account admin ne ban kar diya hai. Madad ke liye owner se contact karo.</p>
-    <button class="abtn" data-act="logout" style="width:100%">Logout</button>
+    <button class="abtn" data-act="logout" style="width:100%;height:44px">Logout</button>
   </div></div>`;
 }
 
@@ -214,7 +274,7 @@ function playView(u){
   <div class="qa-row">
     ${qa(ICON.trophy,'My Matches','matches')}
     ${qa(ICON.wallet,'My Wallet','account')}
-    ${isAdmin(u) ? qa(ICON.shield,'Admin','admin') : qa(ICON.star,'Top Play','matches')}
+    ${isAdmin(u) ? qa(ICON.shield,'Admin','admin') : qa(ICON.chat,'Support','chat')}
   </div>
   <div class="seg">
     ${['Free Fire India','Free Fire MAX'].map(g => `<button data-act="game" data-v="${g}" class="${S.game===g?'on':''}">${g}</button>`).join('')}
@@ -228,6 +288,126 @@ function matchesView(u){
     (ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Abhi tak kisi tournament me join nahi kiya.</div>');
 }
 
+// ----- chat -----
+function bubble(m, uid, viewer){
+  const staffView = isAdmin(viewer);
+  const mine = staffView ? m.role === 'staff' : m.role === 'user';
+  if (m.role === 'sys') return `<div class="sys">${esc(m.text)}</div>`;
+  const cls = `bubble ${mine ? 'me' : 'them'}`;
+  const who = `<div class="who">${esc(m.role === 'staff' ? 'Vortex Admin' : m.fromName)}</div>`;
+  if (m.type === 'text') return `<div class="${cls}">${who}${esc(m.text)}</div>`;
+  if (m.type === 'img') return `<div class="${cls}">${who}<img src="${m.img}" alt="screenshot"></div>`;
+  if (m.type === 'claim') {
+    const st = m.status === 'approved' ? '<span class="badge good">APPROVED</span>'
+      : m.status === 'rejected' ? '<span class="badge bad">REJECTED</span>'
+      : '<span class="badge warn">PENDING</span>';
+    const btns = (staffView && m.status === 'pending')
+      ? `<div class="btns"><button class="abtn ok" data-act="claimok" data-uid="${esc(uid)}" data-id="${esc(m.id)}">Approve</button><button class="abtn danger" data-act="claimno" data-uid="${esc(uid)}" data-id="${esc(m.id)}">Reject</button></div>` : '';
+    return `<div class="${cls}">${who}<div class="claim">
+      <div class="row"><b>Coins claim: ${Number(m.amount)}</b>${st}</div>
+      <div class="mut" style="margin-top:6px">UPI/Txn ID: ${esc(m.txn || '-')}</div>
+      <img src="${m.img}" alt="payment screenshot" style="width:100%;border-radius:12px;margin-top:8px;display:block">
+      ${btns}
+    </div></div>`;
+  }
+  return '';
+}
+
+function chatListView(){
+  const c = getChats();
+  const list = users().filter(x => c[x.id]);
+  const rows = list.map(x => {
+    const msgs = c[x.id].messages || [];
+    const last = msgs[msgs.length - 1];
+    const pend = msgs.filter(m => m.type === 'claim' && m.status === 'pending').length;
+    const prev = last ? (last.type === 'text' ? last.text : last.type === 'img' ? 'Photo' : last.type === 'claim' ? 'Coins claim' : last.text || '') : '';
+    return `<button class="thread" data-act="open" data-id="${esc(x.id)}">
+      <div style="min-width:0"><b>${esc(x.name)}</b><div class="mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px">${esc(prev)}</div></div>
+      ${pend ? `<span class="badge warn">${pend} PENDING</span>` : ''}
+    </button>`;
+  }).join('');
+  return `<h2 class="ttl">SUPPORT CHATS</h2>` + (rows || '<div class="empty">Abhi koi chat nahi hai.</div>');
+}
+
+function chatView(u){
+  if (isAdmin(u) && !S.chatWith && !S.claimOpen) return chatListView();
+  const uid = (isAdmin(u) && !S.claimOpen) ? S.chatWith : u.id;
+  const target = users().find(x => x.id === uid);
+  const msgs = (getChats()[uid] || {}).messages || [];
+  const head = (isAdmin(u) && !S.claimOpen)
+    ? `<div class="row" style="margin-bottom:10px"><button class="abtn" data-act="chatback">← Back</button><b>${esc(target ? target.name : 'User')}</b></div>`
+    : `<h2 class="ttl">SUPPORT CHAT</h2><div class="mut" style="margin-bottom:10px">Admin yahan aapka message aur payment screenshot dekhega.</div>`;
+  const claimForm = S.claimOpen ? `
+    <div class="glass">
+      <div class="ttl" style="font-size:14px;margin-bottom:10px">COINS CLAIM — ${Number(S.claimAmt)} coins</div>
+      <form id="claimForm">
+        <label>UPI / Transaction ID (optional)</label>
+        <input name="txn" maxlength="40" placeholder="Transaction ID">
+        <label>Payment screenshot (zaroori)</label>
+        <input name="img" type="file" accept="image/*" required>
+        <div class="row" style="gap:8px"><button class="gbtn" type="submit">CLAIM BHEJO</button></div>
+      </form>
+      <button class="abtn" data-act="claimcancel" style="margin-top:8px;width:100%">Cancel</button>
+    </div>` : '';
+  return `${head}${claimForm}
+    <div>${msgs.length ? msgs.map(m => bubble(m, uid, u)).join('') : '<div class="empty">Abhi koi message nahi hai.</div>'}</div>
+    <form id="chatForm" class="glass" style="margin-top:12px">
+      <textarea name="msg" rows="2" maxlength="500" placeholder="Message likho..."></textarea>
+      <div class="row" style="gap:8px">
+        <label class="abtn" style="margin:0;cursor:pointer">Photo<input name="img" type="file" accept="image/*" style="display:none"></label>
+        <button class="gbtn sm" type="submit">Send</button>
+      </div>
+    </form>`;
+}
+
+// ----- wallet -----
+function walletBox(u){
+  const s = getSet();
+  if (!s.upiId) return `<div class="note err">Admin ne abhi UPI ID set nahi ki hai. Thodi der baad try karo.</div>`;
+  const qr = S.qrAmt ? `
+    <div class="glass">
+      <div class="ttl" style="font-size:14px">PAY ₹${S.qrAmt} = ${S.qrAmt} COINS</div>
+      <div class="mut" style="margin-top:4px">1 coin = ₹1. QR scan karo ya Pay button dabao.</div>
+      <div class="qrwrap"><div id="qrbox"></div></div>
+      <div class="grid2" style="margin-bottom:10px">
+        <button class="abtn" data-act="dlqr">Download QR</button>
+        <a class="abtn" href="${esc(upiLink(S.qrAmt))}">Pay via UPI</a>
+      </div>
+      <button class="gbtn" data-act="claim">Payment kar diya, Claim Coins</button>
+    </div>` : '';
+  return `
+    <div class="glass">
+      <div class="ttl" style="font-size:14px;margin-bottom:10px">COINS ADD KARO</div>
+      <label>Amount (10 se 1,00,000)</label>
+      <div class="row" style="gap:8px;flex-wrap:nowrap">
+        <input id="amt" type="number" min="10" max="100000" value="${S.qrAmt || 100}" style="margin:0">
+        <button class="gbtn sm" data-act="addcoins">Add</button>
+      </div>
+    </div>${qr}`;
+}
+
+function accountView(u){
+  const mine = (getChats()[u.id] || {}).messages || [];
+  const reqs = mine.filter(m => m.type === 'claim');
+  return `
+  <h2 class="ttl">MY WALLET</h2>
+  <div class="glass" style="text-align:center;padding:24px">
+    <div class="mut">Your Coins</div>
+    <div class="ttl" style="font-size:44px;color:var(--gold);text-shadow:0 0 22px rgba(250,204,21,.45);margin-top:6px">${coinsOf(u)}</div>
+  </div>
+  ${walletBox(u)}
+  ${reqs.length ? `<h2 class="ttl" style="font-size:14px">MERI CLAIM REQUESTS</h2>` + reqs.map(m => `
+    <div class="glass row"><div><b>${Number(m.amount)} coins</b><div class="mut">${esc(new Date(m.at).toLocaleString('en-IN'))}</div></div>
+    <span class="badge ${m.status==='approved'?'good':m.status==='rejected'?'bad':'warn'}">${(m.status||'pending').toUpperCase()}</span></div>`).join('') : ''}
+  <div class="glass">
+    <div class="mut">Naam</div><b>${esc(u.name)}</b>
+    <div class="mut" style="margin-top:12px">Email</div><b>${esc(u.email)}</b>
+    <div class="mut" style="margin-top:12px">Role</div><b>${roleLabel(u.role)}</b>
+  </div>
+  <button class="abtn" data-act="logout" style="width:100%;height:48px">Logout</button>`;
+}
+
+// ----- admin -----
 function tourPanel(){
   const all = load('vx_tournaments', []);
   return `
@@ -290,46 +470,66 @@ function usersPanel(u){
     (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">Abhi koi registered user nahi hai.</div>');
 }
 
+function selfCard(u){
+  return `<div class="glass urow">
+    <div class="row"><div><b>Mera account (${roleLabel(u.role)})</b><div class="mut">Apne coins khud set ya add karo</div></div><span class="coinchip">${ICON.coin} ${coinsOf(u)}</span></div>
+    <label style="margin-top:12px">Amount</label>
+    <div class="row" style="gap:8px;flex-wrap:nowrap"><input id="c_self" type="number" min="0" value="0" style="margin:0"><button class="abtn" data-act="selfcoins" data-v="set">Set</button><button class="abtn ok" data-act="selfcoins" data-v="add">Add</button></div>
+  </div>`;
+}
+
+function selfCoins(mode){
+  const u = me(); if (!isAdmin(u)) return;
+  const v = Math.floor(Number(document.getElementById('c_self').value));
+  if (!(v >= 0) || (mode === 'add' && v === 0)) return flash('Valid amount daalo.', 'err');
+  const list = users();
+  const p = list.find(x => x.id === u.id);
+  p.coins = mode === 'add' ? coinsOf(p) + v : v;
+  save('vx_users', list);
+  flash(mode === 'add' ? `${v} coins add ho gaye.` : `Coins ${v} set ho gaye.`);
+}
+
+function payPanel(){
+  const s = getSet();
+  return `
+  <div class="glass">
+    <div class="ttl" style="font-size:14px;margin-bottom:12px">PAYMENT SETTINGS</div>
+    <form id="payForm">
+      <label>UPI ID (jaise name@upi)</label>
+      <input name="upiId" value="${esc(s.upiId)}" placeholder="yourname@upi" maxlength="60">
+      <label>Receiver naam (app me dikhega)</label>
+      <input name="upiName" value="${esc(s.upiName)}" maxlength="40">
+      <button class="gbtn" type="submit">SAVE</button>
+    </form>
+  </div>`;
+}
+
 function adminView(u){
   const list = users();
   const ts = load('vx_tournaments', []);
+  const sub = S.sub || 'tour';
+  const tabBtn = (k, l) => `<button data-act="sub" data-v="${k}" class="${sub===k?'on':''}">${l}</button>`;
   return `
   <h2 class="ttl">ADMIN PANEL</h2>
   <div class="stats">
     <div class="st"><b>${list.filter(x=>x.role!=='owner').length}</b><span>Users</span></div>
     <div class="st"><b>${ts.length}</b><span>Tournaments</span></div>
     <div class="st"><b>${list.filter(x=>x.banned).length}</b><span>Banned</span></div>
+    <div class="st"><b>${pendingClaims()}</b><span>Pending</span></div>
   </div>
-  <div class="seg">
-    <button data-act="sub" data-v="tour" class="${S.sub==='tour'?'on':''}">Tournaments</button>
-    <button data-act="sub" data-v="users" class="${S.sub==='users'?'on':''}">Users & Coins</button>
-  </div>
-  ${S.sub === 'users' ? usersPanel(u) : tourPanel(u)}`;
-}
-
-function accountView(u){
-  return `
-  <h2 class="ttl">MY ACCOUNT</h2>
-  <div class="glass" style="text-align:center;padding:24px">
-    <div class="mut">Your Coins</div>
-    <div class="ttl" style="font-size:44px;color:var(--gold);text-shadow:0 0 22px rgba(250,204,21,.45);margin-top:6px">${coinsOf(u)}</div>
-  </div>
-  <div class="glass">
-    <div class="mut">Naam</div><b>${esc(u.name)}</b>
-    <div class="mut" style="margin-top:12px">Email</div><b>${esc(u.email)}</b>
-    <div class="mut" style="margin-top:12px">Role</div><b>${roleLabel(u.role)}</b>
-  </div>
-  <button class="abtn" data-act="logout" style="width:100%;height:48px">Logout</button>`;
+  <div class="seg">${tabBtn('tour','Tournaments')}${tabBtn('users','Users')}${tabBtn('pay','Payment')}</div>
+  ${sub==='users' ? selfCard(u) + usersPanel(u) : sub==='pay' ? payPanel() : tourPanel()}`;
 }
 
 function shell(u){
-  const tabs = [['play',ICON.play,'Play'],['matches',ICON.trophy,'Matches']];
+  const tabs = [['play',ICON.play,'Play'],['matches',ICON.trophy,'Matches'],['chat',ICON.chat,'Chat']];
   if (isAdmin(u)) tabs.push(['admin',ICON.shield,'Admin']);
-  tabs.push(['account',ICON.user,'Account']);
+  tabs.push(['account',ICON.user,'Wallet']);
 
   let body;
   if (S.page === 'play') body = playView(u);
   else if (S.page === 'matches') body = matchesView(u);
+  else if (S.page === 'chat') body = chatView(u);
   else if (S.page === 'admin' && isAdmin(u)) body = adminView(u);
   else body = accountView(u);
 
@@ -354,6 +554,14 @@ function render(){
   else if (u.banned && u.role !== 'owner') html = banView();
   else html = shell(u);
   $('#app').innerHTML = html;
+  if (u && S.qrAmt && document.getElementById('qrbox')) makeQR(S.qrAmt);
+}
+
+function makeQR(amt){
+  const box = document.getElementById('qrbox');
+  box.innerHTML = '';
+  if (typeof QRCode === 'undefined') { box.textContent = 'QR load nahi hua. Internet check karo.'; return; }
+  new QRCode(box, { text: upiLink(amt), width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
 }
 
 // ---------- actions ----------
@@ -450,20 +658,105 @@ function setCoins(id){
   flash(`${t.name} ke coins ${n} set ho gaye.`);
 }
 
+function addCoinsStart(){
+  const s = getSet();
+  if (!s.upiId) return flash('Admin ne UPI ID set nahi ki hai.', 'err');
+  const v = Math.floor(Number(document.getElementById('amt').value));
+  if (!(v >= 10 && v <= 100000)) return flash('Amount 10 se 1,00,000 ke beech daalo.', 'err');
+  S.qrAmt = v;
+  S.claimOpen = false;
+  render();
+}
+
+function savePaySettings(f){
+  const d = Object.fromEntries(new FormData(f));
+  save('vx_settings', { upiId: String(d.upiId||'').trim(), upiName: String(d.upiName||'').trim() || 'Vortex Esport' });
+  flash('Payment settings save ho gayi.');
+}
+
+async function chatSubmit(f){
+  const u = me(); if (!u) return;
+  const target = (isAdmin(u) && !S.claimOpen) ? S.chatWith : u.id;
+  if (!target) return;
+  const fd = new FormData(f);
+  const text = String(fd.get('msg') || '').trim();
+  const file = fd.get('img');
+  const hasFile = file && file.size > 0;
+  if (!text && !hasFile) return;
+  const role = (isAdmin(u) && !S.claimOpen) ? 'staff' : 'user';
+  if (text) postMsg(target, { type:'text', role, fromName:u.name, text });
+  if (hasFile) {
+    try { const shot = await compress(file); postMsg(target, { type:'img', role, fromName:u.name, img:shot }); }
+    catch (e) { return flash('Photo load nahi hua.', 'err'); }
+  }
+  render();
+}
+
+async function claimSubmit(f){
+  const u = me(); if (!u) return;
+  const fd = new FormData(f);
+  const file = fd.get('img');
+  if (!file || !file.size) return flash('Payment screenshot dalna zaroori hai.', 'err');
+  let shot;
+  try { shot = await compress(file); } catch (e) { return flash('Screenshot load nahi hua.', 'err'); }
+  postMsg(u.id, { type:'claim', role:'user', fromName:u.name, amount:S.claimAmt, txn:String(fd.get('txn')||'').trim(), img:shot, status:'pending' });
+  S.claimOpen = false; S.qrAmt = 0; S.claimAmt = 0;
+  flash('Claim bhej diya. Admin check karke coins add karega.');
+}
+
+function decideClaim(uid, id, ok){
+  const staff = me(); if (!isAdmin(staff)) return;
+  const c = getChats();
+  const th = c[uid]; if (!th) return;
+  const m = th.messages.find(x => x.id === id);
+  if (!m || m.status !== 'pending') return;
+  if (ok) {
+    const list = users();
+    const p = list.find(x => x.id === uid);
+    if (p) { p.coins = coinsOf(p) + Number(m.amount); save('vx_users', list); }
+  }
+  m.status = ok ? 'approved' : 'rejected';
+  m.decidedBy = staff.name;
+  saveChats(c);
+  postMsg(uid, { type:'sys', role:'sys', text: ok ? `${m.amount} coins aapke account me add ho gaye.` : 'Claim reject ho gaya. Detail ke liye chat par message karo.' });
+  flash(ok ? 'Coins add ho gaye.' : 'Claim reject kar diya.', ok ? 'ok' : 'err');
+}
+
 // ---------- events ----------
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el || el.disabled) return;
   const a = el.dataset.act;
   if (a === 'tab') { S.tab = el.dataset.v; render(); }
-  else if (a === 'nav') { S.page = el.dataset.v; if (S.page === 'admin') S.sub = S.sub || 'tour'; render(); }
+  else if (a === 'nav') {
+    S.page = el.dataset.v;
+    if (S.page !== 'chat') S.claimOpen = false;
+    if (S.page === 'chat' && isAdmin(me())) S.chatWith = null;
+    render();
+  }
   else if (a === 'sub') { S.sub = el.dataset.v; render(); }
   else if (a === 'game') { S.game = el.dataset.v; render(); }
   else if (a === 'join') joinT(el.dataset.id);
   else if (a === 'del') delT(el.dataset.id);
   else if (a === 'ban') toggleBan(el.dataset.id);
   else if (a === 'coins') setCoins(el.dataset.id);
-  else if (a === 'logout') { save('vx_session', null); S.page = 'play'; S.tab = 'login'; render(); }
+  else if (a === 'selfcoins') selfCoins(el.dataset.v);
+  else if (a === 'addcoins') addCoinsStart();
+  else if (a === 'dlqr') {
+    const c = document.querySelector('#qrbox canvas');
+    if (!c) return flash('QR abhi ready nahi hai.', 'err');
+    const link = document.createElement('a');
+    link.href = c.toDataURL('image/png');
+    link.download = 'vortex-qr-' + S.qrAmt + '.png';
+    link.click();
+  }
+  else if (a === 'claim') { S.claimAmt = S.qrAmt; S.claimOpen = true; S.page = 'chat'; render(); }
+  else if (a === 'claimcancel') { S.claimOpen = false; render(); }
+  else if (a === 'open') { S.chatWith = el.dataset.id; render(); }
+  else if (a === 'chatback') { S.chatWith = null; render(); }
+  else if (a === 'claimok') decideClaim(el.dataset.uid, el.dataset.id, true);
+  else if (a === 'claimno') decideClaim(el.dataset.uid, el.dataset.id, false);
+  else if (a === 'logout') { save('vx_session', null); S.page = 'play'; S.tab = 'login'; S.qrAmt = 0; S.claimOpen = false; render(); }
 });
 document.addEventListener('change', e => {
   const el = e.target;
@@ -471,8 +764,12 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('submit', e => {
   e.preventDefault();
-  if (e.target.id === 'authForm') authSubmit(e.target);
-  else if (e.target.id === 'tForm') createT(e.target);
+  const id = e.target.id;
+  if (id === 'authForm') authSubmit(e.target);
+  else if (id === 'tForm') createT(e.target);
+  else if (id === 'payForm') savePaySettings(e.target);
+  else if (id === 'chatForm') chatSubmit(e.target);
+  else if (id === 'claimForm') claimSubmit(e.target);
 });
 
 // ---------- start ----------
