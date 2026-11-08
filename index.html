@@ -91,6 +91,8 @@ nav button.on{color:#fff;background:linear-gradient(135deg,rgba(168,85,247,.5),r
 nav button .ic{width:22px;height:22px}
 .qrimg{width:100%;max-width:260px;height:auto;border-radius:12px;display:block;margin:0 auto}
 .coinchip{cursor:pointer;font-family:inherit}
+.tkbar{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;margin:0;padding:12px;z-index:4;box-sizing:border-box}
+.tkbar textarea{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -201,7 +203,7 @@ function cooldownLeft(u){
     .reduce((a, t) => Math.max(a, new Date(t.createdAt).getTime()), 0);
   return last ? Math.max(0, COOL_MS - (Date.now() - last)) : 0;
 }
-const fmtWait = ms => { const h = Math.ceil(ms / 3600000); return h >= 24 ? Math.ceil(h / 24) + ' din' : h + ' ghante'; };
+const fmtWait = ms => { const h = Math.ceil(ms / 3600000); return h >= 24 ? Math.ceil(h / 24) + ' days' : h + ' hours'; };
 const canSee = (u, t) => !!u && !!t && (isAdmin(u) || t.userId === u.id);
 function pushMsg(tid, msg){
   const list = getTk();
@@ -297,15 +299,67 @@ function playView(u){
   ${ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Is game ke liye abhi koi tournament nahi.</div>'}`;
 }
 
+function tDetailView(u){
+  const t = load('vx_tournaments', []).find(x => x.id === S.tdet);
+  if (!t || (!t.players.includes(u.id) && !isAdmin(u))) { S.tdet = null; return matchesView(u); }
+  const canEdit = isAdmin(u) && (u.role === 'owner' || t.createdBy === u.id);
+  const hasRoom = !!(t.roomId || t.roomPass);
+  const roomBlock = canEdit ? `
+    <div class="glass">
+      <div class="ttl" style="font-size:14px;margin-bottom:10px">ROOM ID & PASSWORD</div>
+      <label>Room ID</label>
+      <input id="rid_${esc(t.id)}" value="${esc(t.roomId || '')}" maxlength="30" placeholder="Room ID">
+      <label>Password</label>
+      <input id="rpw_${esc(t.id)}" value="${esc(t.roomPass || '')}" maxlength="30" placeholder="Password">
+      <button class="gbtn" data-act="roomsave" data-id="${esc(t.id)}">SAVE ROOM ID & PASSWORD</button>
+    </div>`
+    : hasRoom ? `
+    <div class="glass">
+      <div class="ttl" style="font-size:14px;margin-bottom:10px">ROOM DETAILS</div>
+      <div class="grid2">
+        <div class="box"><span class="mut">Room ID</span><b>${esc(t.roomId || '-')}</b></div>
+        <div class="box"><span class="mut">Password</span><b>${esc(t.roomPass || '-')}</b></div>
+      </div>
+    </div>`
+    : `<div class="empty">Room ID abhi set nahi hua. Admin/owner jaldi set karega.</div>`;
+  return `
+    <div class="row" style="margin-bottom:10px"><button class="abtn" data-act="tdback">← Back</button></div>
+    <h2 class="ttl" style="font-size:18px">${esc(t.title)}</h2>
+    <div class="glass">
+      <span class="tag">${esc(t.mode)} · ${esc(t.game)}</span>
+      <div class="grid2" style="margin-top:12px">
+        <div class="box"><span class="mut">Match time</span><b style="font-size:14px">${esc(fmtDate(t.date))}</b></div>
+        <div class="box"><span class="mut">Prize pool</span><b style="color:var(--gold)">₹${Number(t.prize).toLocaleString('en-IN')}</b></div>
+      </div>
+    </div>
+    ${roomBlock}`;
+}
+
 function matchesView(u){
+  if (S.tdet) return tDetailView(u);
   const ts = load('vx_tournaments', []).filter(t => t.players.includes(u.id));
   return `<h2 class="ttl">MY MATCHES</h2>` +
-    (ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Abhi tak kisi tournament me join nahi kiya.</div>');
+    (ts.length ? ts.map(t => {
+      const ready = !!(t.roomId || t.roomPass);
+      return `<div class="glass" style="margin-bottom:10px">
+        <span class="tag">${esc(t.mode)} · ${esc(t.game)}</span>
+        <div class="row" style="margin-top:8px"><div class="ttl" style="font-size:15px">${esc(t.title)}</div>
+        <span class="badge ${ready ? 'good' : 'warn'}">${ready ? 'ROOM READY' : 'ROOM PENDING'}</span></div>
+        <div class="mut" style="margin-top:4px">${esc(fmtDate(t.date))}</div>
+        <button class="gbtn sm" style="margin-top:12px" data-act="tdet" data-id="${esc(t.id)}">INFO</button>
+      </div>`;
+    }).join('') : '<div class="empty">Abhi tak kisi tournament me join nahi kiya.</div>');
 }
 
 // ----- chat -----
+function sysText(t){
+  const hit = /^Ticket (.+) ne close kar diya\.$/.exec(t || '');
+  if (hit) return `Ticket closed by ${hit[1]}.`;
+  if (/^Ticket open hua\./.test(t || '')) return 'Ticket opened. Send your payment screenshot here, admin will check and add your coins.';
+  return t;
+}
 function bubble(m, viewer){
-  if (m.type === 'sys') return `<div class="sys">${esc(m.text)}</div>`;
+  if (m.type === 'sys') return `<div class="sys">${esc(sysText(m.text))}</div>`;
   const mine = m.fromId === viewer.id;
   const cls = `bubble ${mine ? 'me' : 'them'}`;
   const who = `<div class="who">${esc(m.staff ? 'Vortex Admin' : m.fromName)}</div>`;
@@ -328,14 +382,14 @@ function chatListView(u){
   const all = getTk();
   if (isAdmin(u)) {
     return `<h2 class="ttl">SUPPORT TICKETS</h2>
-      <div class="mut" style="margin-bottom:12px">Open: ${openTickets()} · Sabhi tickets yahan hain</div>` +
-      (all.length ? all.map(ticketRow).join('') : '<div class="empty">Abhi koi ticket nahi hai.</div>');
+      <div class="mut" style="margin-bottom:12px">Open: ${openTickets()} · All tickets are here</div>` +
+      (all.length ? all.map(ticketRow).join('') : '<div class="empty">No tickets yet.</div>');
   }
   const mine = all.filter(t => t.userId === u.id);
-  const btn = `<button class="gbtn" data-act="newtkt">+ NEW CHAT / SCREENSHOT BHEJO</button>
-    <div class="mut" style="margin:8px 0 14px">Ek time par 1 hi open chat rehti hai. 2 din me sirf 1 naya ticket ban sakta hai.</div>`;
+  const btn = `<button class="gbtn" data-act="newtkt">+ NEW CHAT / SEND SCREENSHOT</button>
+    <div class="mut" style="margin:8px 0 14px">Only 1 open chat at a time. You can create 1 new ticket every 2 days.</div>`;
   return `<h2 class="ttl">SUPPORT CHAT</h2>${btn}` +
-    (mine.length ? mine.map(ticketRow).join('') : '<div class="empty">Abhi koi chat nahi hai.</div>');
+    (mine.length ? mine.map(ticketRow).join('') : '<div class="empty">No chats yet.</div>');
 }
 
 function ticketView(u){
@@ -344,21 +398,21 @@ function ticketView(u){
   const staff = isAdmin(u);
   const open = t.status === 'open';
   const closeBtn = (staff && open)
-    ? `<button class="abtn danger" data-act="tkclose" data-id="${esc(t.id)}">Ticket close karo</button>` : '';
+    ? `<button class="abtn danger" data-act="tkclose" data-id="${esc(t.id)}">Close ticket</button>` : '';
   const form = open ? `
-    <form id="tkForm" class="glass" style="margin-top:12px">
-      <textarea name="msg" rows="2" maxlength="500" placeholder="Message ya problem likho..."></textarea>
+    <form id="tkForm" class="glass tkbar">
+      <textarea name="msg" rows="2" maxlength="500" placeholder="Type a message or problem..."></textarea>
       <div class="row" style="gap:8px">
         <label class="abtn" style="margin:0;cursor:pointer">Screenshot<input name="img" type="file" accept="image/*" style="display:none"></label>
         <button class="gbtn sm" type="submit">Send</button>
       </div>
     </form>`
-    : `<div class="note err" style="margin-top:12px">Ye ticket close ho chuka hai.${staff ? '' : ' Naya chat ke liye New Chat banao.'}</div>`;
+    : `<div class="note err" style="margin-top:12px">This ticket is closed.${staff ? '' : ' Create a New Chat for a new issue.'}</div>`;
   return `
     <div class="row" style="margin-bottom:10px"><button class="abtn" data-act="tkback">← Back</button>${closeBtn}</div>
     <div class="ttl" style="font-size:14px">${esc(t.userName)} · ${esc(t.id)}</div>
-    <div class="mut" style="margin:4px 0 12px">Sirf ye member aur owner/admin ye chat dekh sakte hain.</div>
-    <div>${t.messages.map(m => bubble(m, u)).join('')}</div>
+    <div class="mut" style="margin:4px 0 12px">Only this member and owner/admin can see this chat.</div>
+    <div style="padding-bottom:190px">${t.messages.map(m => bubble(m, u)).join('')}</div>
     ${form}`;
 }
 
@@ -754,16 +808,16 @@ async function savePaySettings(f){
 function newTicket(){
   const u = me(); if (!u) return;
   const left = cooldownLeft(u);
-  if (left > 0) return flash(`2 din me sirf 1 ticket. Agla ticket ${fmtWait(left)} baad.`, 'err');
+  if (left > 0) return flash(`Only 1 ticket every 2 days. Next ticket in ${fmtWait(left)}.`, 'err');
   const t = {
     id: 'TK' + Date.now().toString(36).toUpperCase(),
     userId: u.id, userName: u.name, createdAt: new Date().toISOString(), status: 'open',
     messages: [{ id:'sys' + Date.now().toString(36), at:new Date().toISOString(), type:'sys',
-      text:'Ticket open hua. Payment screenshot yahan bhejo, admin check karke coins add karega.' }]
+      text:'Ticket opened. Send your payment screenshot here, admin will check and add your coins.' }]
   };
   const list = getTk(); list.unshift(t); saveTk(list);
   S.addOpen = false; S.page = 'chat'; S.tkt = t.id;
-  flash('New chat ban gaya.');
+  flash('New chat created.');
 }
 
 function startChat(){
@@ -779,27 +833,31 @@ function closeTk(id){
   const t = list.find(x => x.id === id);
   if (!t || t.status !== 'open') return;
   t.status = 'closed'; t.closedBy = u.name; t.closedAt = new Date().toISOString();
-  t.messages.push({ id:'sys' + Date.now().toString(36), at:new Date().toISOString(), type:'sys', text:`Ticket ${u.name} ne close kar diya.` });
+  t.messages.push({ id:'sys' + Date.now().toString(36), at:new Date().toISOString(), type:'sys', text:`Ticket closed by ${u.name}.` });
   saveTk(list);
-  flash('Ticket close ho gaya.');
+  flash('Ticket closed.');
 }
 
 async function tkSubmit(f){
   const u = me(); if (!u) return;
   const t = getTk().find(x => x.id === S.tkt);
-  if (!canSee(u, t) || t.status !== 'open') return flash('Ye ticket open nahi hai.', 'err');
-  const fd = new FormData(f);
-  const text = String(fd.get('msg') || '').trim();
-  const file = fd.get('img');
-  const hasFile = !!(file && file.size);
-  if (!text && !hasFile) return;
-  const base = { fromId: u.id, fromName: u.name, staff: isAdmin(u) };
-  if (text) pushMsg(t.id, { ...base, type:'text', text });
-  if (hasFile) {
-    try { const img = await compress(file); pushMsg(t.id, { ...base, type:'img', img }); }
-    catch (e) { return flash('Screenshot load nahi hua.', 'err'); }
-  }
+  if (!canSee(u, t) || t.status !== 'open') return flash('This ticket is not open.', 'err');
+  const text = String(new FormData(f).get('msg') || '').trim();
+  if (!text) return;
+  pushMsg(t.id, { fromId: u.id, fromName: u.name, staff: isAdmin(u), type:'text', text });
   render();
+}
+
+async function sendShot(file, input){
+  const u = me(); if (!u) return;
+  const t = getTk().find(x => x.id === S.tkt);
+  if (input) input.value = '';
+  if (!canSee(u, t) || t.status !== 'open') return flash('This ticket is not open.', 'err');
+  try {
+    const img = await compress(file);
+    pushMsg(t.id, { fromId: u.id, fromName: u.name, staff: isAdmin(u), type:'img', img });
+    flash('Screenshot sent.');
+  } catch (e) { flash('Could not load screenshot.', 'err'); }
 }
 
 // ---------- events ----------
@@ -808,12 +866,14 @@ document.addEventListener('click', e => {
   if (!el || el.disabled) return;
   const a = el.dataset.act;
   if (a === 'tab') { S.tab = el.dataset.v; render(); }
-  else if (a === 'nav') { S.page = el.dataset.v; S.tkt = null; render(); }
+  else if (a === 'nav') { S.page = el.dataset.v; S.tkt = null; S.tdet = null; render(); }
   else if (a === 'sub') { S.sub = el.dataset.v; render(); }
   else if (a === 'game') { S.game = el.dataset.v; render(); }
   else if (a === 'join') joinT(el.dataset.id);
   else if (a === 'del') delT(el.dataset.id);
   else if (a === 'roomsave') saveRoom(el.dataset.id);
+  else if (a === 'tdet') { S.tdet = el.dataset.id; render(); }
+  else if (a === 'tdback') { S.tdet = null; render(); }
   else if (a === 'withdraw') requestWithdraw();
   else if (a === 'wdchat') { S.wdDone = null; startChat(); }
   else if (a === 'wdpaid') decideWd(el.dataset.id, true);
@@ -832,6 +892,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.dataset && el.dataset.act === 'role') setRole(el.dataset.id, el.value);
+  if (el.form && el.form.id === 'tkForm' && el.name === 'img' && el.files && el.files[0]) sendShot(el.files[0], el);
 });
 document.addEventListener('submit', e => {
   e.preventDefault();
