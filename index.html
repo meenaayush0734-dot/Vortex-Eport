@@ -89,6 +89,8 @@ nav button.on{color:#fff;background:linear-gradient(135deg,rgba(168,85,247,.5),r
 .ic{width:22px;height:22px;flex:none;display:block}
 .coinchip .ic{width:15px;height:15px}
 nav button .ic{width:22px;height:22px}
+.qrimg{width:100%;max-width:260px;height:auto;border-radius:12px;display:block;margin:0 auto}
+.coinchip{cursor:pointer;font-family:inherit}
 </style>
 </head>
 <body>
@@ -141,7 +143,7 @@ function seed(){
 }
 
 // ---------- state & helpers ----------
-let S = { tab:'login', page:'play', sub:'tour', game:'Free Fire India', flash:null, qrAmt:0, claimAmt:0, claimOpen:false, chatWith:null };
+let S = { tab:'login', page:'play', sub:'tour', game:'Free Fire India', flash:null, addOpen:false, tkt:null };
 const users = () => load('vx_users', []);
 const getChats = () => load('vx_chats', {});
 const saveChats = c => save('vx_chats', c);
@@ -164,11 +166,7 @@ const upiLink = amt => {
   const s = getSet();
   return `upi://pay?pa=${encodeURIComponent(s.upiId)}&pn=${encodeURIComponent(s.upiName || 'Vortex Esport')}&am=${amt}&cu=INR&tn=${encodeURIComponent('Vortex coins')}`;
 };
-const pendingClaims = () => {
-  const c = getChats(); let n = 0;
-  Object.values(c).forEach(th => (th.messages || []).forEach(m => { if (m.type === 'claim' && m.status === 'pending') n++; }));
-  return n;
-};
+const pendingClaims = () => openTickets();
 
 // image compress (keeps localStorage small)
 function compress(file){
@@ -192,12 +190,24 @@ function compress(file){
   });
 }
 
-// ---------- chat data ----------
-function postMsg(uid, msg){
-  const c = getChats();
-  c[uid] = c[uid] || { messages: [] };
-  c[uid].messages.push({ id:'m' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), at:new Date().toISOString(), ...msg });
-  saveChats(c);
+// ---------- support tickets ----------
+const getTk = () => load('vx_tickets', []);
+const saveTk = t => save('vx_tickets', t);
+const COOL_MS = 48 * 60 * 60 * 1000; // 2 din me 1 ticket
+const openTickets = () => getTk().filter(t => t.status === 'open').length;
+function cooldownLeft(u){
+  const last = getTk().filter(t => t.userId === u.id)
+    .reduce((a, t) => Math.max(a, new Date(t.createdAt).getTime()), 0);
+  return last ? Math.max(0, COOL_MS - (Date.now() - last)) : 0;
+}
+const fmtWait = ms => { const h = Math.ceil(ms / 3600000); return h >= 24 ? Math.ceil(h / 24) + ' din' : h + ' ghante'; };
+const canSee = (u, t) => !!u && !!t && (isAdmin(u) || t.userId === u.id);
+function pushMsg(tid, msg){
+  const list = getTk();
+  const t = list.find(x => x.id === tid);
+  if (!t) return;
+  t.messages.push({ id:'m' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), at:new Date().toISOString(), ...msg });
+  saveTk(list);
 }
 
 // ---------- views ----------
@@ -289,106 +299,94 @@ function matchesView(u){
 }
 
 // ----- chat -----
-function bubble(m, uid, viewer){
-  const staffView = isAdmin(viewer);
-  const mine = staffView ? m.role === 'staff' : m.role === 'user';
-  if (m.role === 'sys') return `<div class="sys">${esc(m.text)}</div>`;
+function bubble(m, viewer){
+  if (m.type === 'sys') return `<div class="sys">${esc(m.text)}</div>`;
+  const mine = m.fromId === viewer.id;
   const cls = `bubble ${mine ? 'me' : 'them'}`;
-  const who = `<div class="who">${esc(m.role === 'staff' ? 'Vortex Admin' : m.fromName)}</div>`;
-  if (m.type === 'text') return `<div class="${cls}">${who}${esc(m.text)}</div>`;
+  const who = `<div class="who">${esc(m.staff ? 'Vortex Admin' : m.fromName)}</div>`;
   if (m.type === 'img') return `<div class="${cls}">${who}<img src="${m.img}" alt="screenshot"></div>`;
-  if (m.type === 'claim') {
-    const st = m.status === 'approved' ? '<span class="badge good">APPROVED</span>'
-      : m.status === 'rejected' ? '<span class="badge bad">REJECTED</span>'
-      : '<span class="badge warn">PENDING</span>';
-    const btns = (staffView && m.status === 'pending')
-      ? `<div class="btns"><button class="abtn ok" data-act="claimok" data-uid="${esc(uid)}" data-id="${esc(m.id)}">Approve</button><button class="abtn danger" data-act="claimno" data-uid="${esc(uid)}" data-id="${esc(m.id)}">Reject</button></div>` : '';
-    return `<div class="${cls}">${who}<div class="claim">
-      <div class="row"><b>Coins claim: ${Number(m.amount)}</b>${st}</div>
-      <div class="mut" style="margin-top:6px">UPI/Txn ID: ${esc(m.txn || '-')}</div>
-      <img src="${m.img}" alt="payment screenshot" style="width:100%;border-radius:12px;margin-top:8px;display:block">
-      ${btns}
-    </div></div>`;
-  }
-  return '';
+  return `<div class="${cls}">${who}${esc(m.text)}</div>`;
 }
 
-function chatListView(){
-  const c = getChats();
-  const list = users().filter(x => c[x.id]);
-  const rows = list.map(x => {
-    const msgs = c[x.id].messages || [];
-    const last = msgs[msgs.length - 1];
-    const pend = msgs.filter(m => m.type === 'claim' && m.status === 'pending').length;
-    const prev = last ? (last.type === 'text' ? last.text : last.type === 'img' ? 'Photo' : last.type === 'claim' ? 'Coins claim' : last.text || '') : '';
-    return `<button class="thread" data-act="open" data-id="${esc(x.id)}">
-      <div style="min-width:0"><b>${esc(x.name)}</b><div class="mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px">${esc(prev)}</div></div>
-      ${pend ? `<span class="badge warn">${pend} PENDING</span>` : ''}
-    </button>`;
-  }).join('');
-  return `<h2 class="ttl">SUPPORT CHATS</h2>` + (rows || '<div class="empty">Abhi koi chat nahi hai.</div>');
+function ticketRow(t){
+  const msgs = t.messages || [];
+  const last = msgs[msgs.length - 1];
+  const prev = last ? (last.type === 'img' ? 'Photo' : (last.text || '')) : '';
+  return `<button class="thread" data-act="tkopen" data-id="${esc(t.id)}">
+    <div style="min-width:0"><b>${esc(t.userName)} · ${esc(t.id)}</b>
+    <div class="mut" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px">${esc(prev)}</div></div>
+    <span class="badge ${t.status === 'open' ? 'good' : 'bad'}">${t.status.toUpperCase()}</span>
+  </button>`;
+}
+
+function chatListView(u){
+  const all = getTk();
+  if (isAdmin(u)) {
+    return `<h2 class="ttl">SUPPORT TICKETS</h2>
+      <div class="mut" style="margin-bottom:12px">Open: ${openTickets()} · Sabhi tickets yahan hain</div>` +
+      (all.length ? all.map(ticketRow).join('') : '<div class="empty">Abhi koi ticket nahi hai.</div>');
+  }
+  const mine = all.filter(t => t.userId === u.id);
+  const left = cooldownLeft(u);
+  const btn = left > 0
+    ? `<button class="gbtn" disabled>NEW CHAT</button>
+       <div class="mut" style="margin:8px 0 14px">Agla ticket ${fmtWait(left)} baad bana sakte ho (2 din me 1 ticket).</div>`
+    : `<button class="gbtn" data-act="newtkt">+ NEW CHAT</button>
+       <div class="mut" style="margin:8px 0 14px">2 din me sirf 1 ticket bana sakte ho.</div>`;
+  return `<h2 class="ttl">SUPPORT CHAT</h2>${btn}` +
+    (mine.length ? mine.map(ticketRow).join('') : '<div class="empty">Abhi koi chat nahi hai.</div>');
+}
+
+function ticketView(u){
+  const t = getTk().find(x => x.id === S.tkt);
+  if (!canSee(u, t)) { S.tkt = null; return chatListView(u); }
+  const staff = isAdmin(u);
+  const open = t.status === 'open';
+  const closeBtn = (staff && open)
+    ? `<button class="abtn danger" data-act="tkclose" data-id="${esc(t.id)}">Ticket close karo</button>` : '';
+  const form = open ? `
+    <form id="tkForm" class="glass" style="margin-top:12px">
+      <textarea name="msg" rows="2" maxlength="500" placeholder="Message ya problem likho..."></textarea>
+      <div class="row" style="gap:8px">
+        <label class="abtn" style="margin:0;cursor:pointer">Screenshot<input name="img" type="file" accept="image/*" style="display:none"></label>
+        <button class="gbtn sm" type="submit">Send</button>
+      </div>
+    </form>`
+    : `<div class="note err" style="margin-top:12px">Ye ticket close ho chuka hai.${staff ? '' : ' Naya chat ke liye New Chat banao.'}</div>`;
+  return `
+    <div class="row" style="margin-bottom:10px"><button class="abtn" data-act="tkback">← Back</button>${closeBtn}</div>
+    <div class="ttl" style="font-size:14px">${esc(t.userName)} · ${esc(t.id)}</div>
+    <div class="mut" style="margin:4px 0 12px">Sirf ye member aur owner/admin ye chat dekh sakte hain.</div>
+    <div>${t.messages.map(m => bubble(m, u)).join('')}</div>
+    ${form}`;
 }
 
 function chatView(u){
-  if (isAdmin(u) && !S.chatWith && !S.claimOpen) return chatListView();
-  const uid = (isAdmin(u) && !S.claimOpen) ? S.chatWith : u.id;
-  const target = users().find(x => x.id === uid);
-  const msgs = (getChats()[uid] || {}).messages || [];
-  const head = (isAdmin(u) && !S.claimOpen)
-    ? `<div class="row" style="margin-bottom:10px"><button class="abtn" data-act="chatback">← Back</button><b>${esc(target ? target.name : 'User')}</b></div>`
-    : `<h2 class="ttl">SUPPORT CHAT</h2><div class="mut" style="margin-bottom:10px">Admin yahan aapka message aur payment screenshot dekhega.</div>`;
-  const claimForm = S.claimOpen ? `
-    <div class="glass">
-      <div class="ttl" style="font-size:14px;margin-bottom:10px">COINS CLAIM — ${Number(S.claimAmt)} coins</div>
-      <form id="claimForm">
-        <label>UPI / Transaction ID (optional)</label>
-        <input name="txn" maxlength="40" placeholder="Transaction ID">
-        <label>Payment screenshot (zaroori)</label>
-        <input name="img" type="file" accept="image/*" required>
-        <div class="row" style="gap:8px"><button class="gbtn" type="submit">CLAIM BHEJO</button></div>
-      </form>
-      <button class="abtn" data-act="claimcancel" style="margin-top:8px;width:100%">Cancel</button>
-    </div>` : '';
-  return `${head}${claimForm}
-    <div>${msgs.length ? msgs.map(m => bubble(m, uid, u)).join('') : '<div class="empty">Abhi koi message nahi hai.</div>'}</div>
-    <form id="chatForm" class="glass" style="margin-top:12px">
-      <textarea name="msg" rows="2" maxlength="500" placeholder="Message likho..."></textarea>
-      <div class="row" style="gap:8px">
-        <label class="abtn" style="margin:0;cursor:pointer">Photo<input name="img" type="file" accept="image/*" style="display:none"></label>
-        <button class="gbtn sm" type="submit">Send</button>
-      </div>
-    </form>`;
+  return S.tkt ? ticketView(u) : chatListView(u);
 }
 
 // ----- wallet -----
 function walletBox(u){
+  if (!S.addOpen) return `<button class="gbtn" data-act="addopen">+ ADD COINS</button>`;
   const s = getSet();
-  if (!s.upiId) return `<div class="note err">Admin ne abhi UPI ID set nahi ki hai. Thodi der baad try karo.</div>`;
-  const qr = S.qrAmt ? `
-    <div class="glass">
-      <div class="ttl" style="font-size:14px">PAY ₹${S.qrAmt} = ${S.qrAmt} COINS</div>
-      <div class="mut" style="margin-top:4px">1 coin = ₹1. QR scan karo ya Pay button dabao.</div>
-      <div class="qrwrap"><div id="qrbox"></div></div>
-      <div class="grid2" style="margin-bottom:10px">
-        <button class="abtn" data-act="dlqr">Download QR</button>
-        <a class="abtn" href="${esc(upiLink(S.qrAmt))}">Pay via UPI</a>
-      </div>
-      <button class="gbtn" data-act="claim">Payment kar diya, Claim Coins</button>
-    </div>` : '';
+  const num = String(s.waNumber || '').replace(/\D/g, '');
+  const wa = num ? `https://wa.me/${num}?text=${encodeURIComponent('Hi, Vortex me coins add karne hain')}` : '';
+  const qr = s.qrImg || '169608.jpg';
   return `
-    <div class="glass">
-      <div class="ttl" style="font-size:14px;margin-bottom:10px">COINS ADD KARO</div>
-      <label>Amount (10 se 1,00,000)</label>
-      <div class="row" style="gap:8px;flex-wrap:nowrap">
-        <input id="amt" type="number" min="10" max="100000" value="${S.qrAmt || 100}" style="margin:0">
-        <button class="gbtn sm" data-act="addcoins">Add</button>
-      </div>
-    </div>${qr}`;
+  <div class="glass">
+    <div class="row"><div class="ttl" style="font-size:14px">ADD COINS</div><button class="abtn" data-act="addclose">Band karo</button></div>
+    <div class="mut" style="margin-top:4px">1 coin = ₹1</div>
+    ${wa
+      ? `<a class="gbtn" href="${esc(wa)}" target="_blank" rel="noopener" style="margin-top:12px;background:#25D366;box-shadow:none">WhatsApp Pe Baat Karo</a>`
+      : `<div class="note err" style="margin-top:12px">Admin ne WhatsApp number set nahi kiya.</div>`}
+    <div class="qrwrap"><img class="qrimg" src="${esc(qr)}" alt="Payment QR"></div>
+    <div class="note ok">English: After payment, take a screenshot, create a New Chat and send the screenshot in the chat.</div>
+    <div class="note ok">Hinglish: Payment hone ke baad screenshot lekar New Chat banao aur screenshot Chat me bhejo.</div>
+    <button class="gbtn" data-act="newtkt">NEW CHAT BANAO</button>
+  </div>`;
 }
 
 function accountView(u){
-  const mine = (getChats()[u.id] || {}).messages || [];
-  const reqs = mine.filter(m => m.type === 'claim');
   return `
   <h2 class="ttl">MY WALLET</h2>
   <div class="glass" style="text-align:center;padding:24px">
@@ -396,9 +394,6 @@ function accountView(u){
     <div class="ttl" style="font-size:44px;color:var(--gold);text-shadow:0 0 22px rgba(250,204,21,.45);margin-top:6px">${coinsOf(u)}</div>
   </div>
   ${walletBox(u)}
-  ${reqs.length ? `<h2 class="ttl" style="font-size:14px">MERI CLAIM REQUESTS</h2>` + reqs.map(m => `
-    <div class="glass row"><div><b>${Number(m.amount)} coins</b><div class="mut">${esc(new Date(m.at).toLocaleString('en-IN'))}</div></div>
-    <span class="badge ${m.status==='approved'?'good':m.status==='rejected'?'bad':'warn'}">${(m.status||'pending').toUpperCase()}</span></div>`).join('') : ''}
   <div class="glass">
     <div class="mut">Naam</div><b>${esc(u.name)}</b>
     <div class="mut" style="margin-top:12px">Email</div><b>${esc(u.email)}</b>
@@ -491,14 +486,17 @@ function selfCoins(mode){
 
 function payPanel(){
   const s = getSet();
+  const cur = s.qrImg || '169608.jpg';
   return `
   <div class="glass">
     <div class="ttl" style="font-size:14px;margin-bottom:12px">PAYMENT SETTINGS</div>
     <form id="payForm">
-      <label>UPI ID (jaise name@upi)</label>
-      <input name="upiId" value="${esc(s.upiId)}" placeholder="yourname@upi" maxlength="60">
-      <label>Receiver naam (app me dikhega)</label>
-      <input name="upiName" value="${esc(s.upiName)}" maxlength="40">
+      <label>WhatsApp number (country code ke saath, jaise 919876543210)</label>
+      <input name="waNumber" value="${esc(s.waNumber || '')}" placeholder="919876543210" maxlength="20">
+      <label>Payment QR (abhi ye dikh raha hai)</label>
+      <div class="qrwrap"><img class="qrimg" src="${esc(cur)}" alt="current QR"></div>
+      <label>Naya QR upload karo (optional)</label>
+      <input name="qr" type="file" accept="image/*">
       <button class="gbtn" type="submit">SAVE</button>
     </form>
   </div>`;
@@ -515,7 +513,7 @@ function adminView(u){
     <div class="st"><b>${list.filter(x=>x.role!=='owner').length}</b><span>Users</span></div>
     <div class="st"><b>${ts.length}</b><span>Tournaments</span></div>
     <div class="st"><b>${list.filter(x=>x.banned).length}</b><span>Banned</span></div>
-    <div class="st"><b>${pendingClaims()}</b><span>Pending</span></div>
+    <div class="st"><b>${pendingClaims()}</b><span>Open tickets</span></div>
   </div>
   <div class="seg">${tabBtn('tour','Tournaments')}${tabBtn('users','Users')}${tabBtn('pay','Payment')}</div>
   ${sub==='users' ? selfCard(u) + usersPanel(u) : sub==='pay' ? payPanel() : tourPanel()}`;
@@ -539,7 +537,7 @@ function shell(u){
   <header>
     <div class="brand">VORTEX <span>ESPORT</span></div>
     <div class="row" style="gap:8px;justify-content:flex-end">
-      <span class="coinchip">${ICON.coin} ${coinsOf(u)}</span>
+      <button class="coinchip" data-act="nav" data-v="account">${ICON.coin} ${coinsOf(u)}</button>
       <span class="pill">${roleLabel(u.role).toUpperCase()}</span>
     </div>
   </header>
@@ -554,7 +552,7 @@ function render(){
   else if (u.banned && u.role !== 'owner') html = banView();
   else html = shell(u);
   $('#app').innerHTML = html;
-  if (u && S.qrAmt && document.getElementById('qrbox')) makeQR(S.qrAmt);
+
 }
 
 function makeQR(amt){
@@ -658,68 +656,60 @@ function setCoins(id){
   flash(`${t.name} ke coins ${n} set ho gaye.`);
 }
 
-function addCoinsStart(){
-  const s = getSet();
-  if (!s.upiId) return flash('Admin ne UPI ID set nahi ki hai.', 'err');
-  const v = Math.floor(Number(document.getElementById('amt').value));
-  if (!(v >= 10 && v <= 100000)) return flash('Amount 10 se 1,00,000 ke beech daalo.', 'err');
-  S.qrAmt = v;
-  S.claimOpen = false;
-  render();
-}
-
-function savePaySettings(f){
-  const d = Object.fromEntries(new FormData(f));
-  save('vx_settings', { upiId: String(d.upiId||'').trim(), upiName: String(d.upiName||'').trim() || 'Vortex Esport' });
+async function savePaySettings(f){
+  const d = new FormData(f);
+  const next = { ...getSet(), waNumber: String(d.get('waNumber') || '').replace(/\D/g, '') };
+  const file = d.get('qr');
+  if (file && file.size) {
+    try { next.qrImg = await compress(file); }
+    catch (e) { return flash('QR image load nahi hua.', 'err'); }
+  }
+  save('vx_settings', next);
   flash('Payment settings save ho gayi.');
 }
 
-async function chatSubmit(f){
+function newTicket(){
   const u = me(); if (!u) return;
-  const target = (isAdmin(u) && !S.claimOpen) ? S.chatWith : u.id;
-  if (!target) return;
+  const left = cooldownLeft(u);
+  if (left > 0) return flash(`2 din me sirf 1 ticket. Agla ticket ${fmtWait(left)} baad.`, 'err');
+  const t = {
+    id: 'TK' + Date.now().toString(36).toUpperCase(),
+    userId: u.id, userName: u.name, createdAt: new Date().toISOString(), status: 'open',
+    messages: [{ id:'sys' + Date.now().toString(36), at:new Date().toISOString(), type:'sys',
+      text:'Ticket open hua. Payment screenshot yahan bhejo, admin check karke coins add karega.' }]
+  };
+  const list = getTk(); list.unshift(t); saveTk(list);
+  S.addOpen = false; S.page = 'chat'; S.tkt = t.id;
+  flash('New chat ban gaya.');
+}
+
+function closeTk(id){
+  const u = me(); if (!isAdmin(u)) return;
+  const list = getTk();
+  const t = list.find(x => x.id === id);
+  if (!t || t.status !== 'open') return;
+  t.status = 'closed'; t.closedBy = u.name; t.closedAt = new Date().toISOString();
+  t.messages.push({ id:'sys' + Date.now().toString(36), at:new Date().toISOString(), type:'sys', text:`Ticket ${u.name} ne close kar diya.` });
+  saveTk(list);
+  flash('Ticket close ho gaya.');
+}
+
+async function tkSubmit(f){
+  const u = me(); if (!u) return;
+  const t = getTk().find(x => x.id === S.tkt);
+  if (!canSee(u, t) || t.status !== 'open') return flash('Ye ticket open nahi hai.', 'err');
   const fd = new FormData(f);
   const text = String(fd.get('msg') || '').trim();
   const file = fd.get('img');
-  const hasFile = file && file.size > 0;
+  const hasFile = !!(file && file.size);
   if (!text && !hasFile) return;
-  const role = (isAdmin(u) && !S.claimOpen) ? 'staff' : 'user';
-  if (text) postMsg(target, { type:'text', role, fromName:u.name, text });
+  const base = { fromId: u.id, fromName: u.name, staff: isAdmin(u) };
+  if (text) pushMsg(t.id, { ...base, type:'text', text });
   if (hasFile) {
-    try { const shot = await compress(file); postMsg(target, { type:'img', role, fromName:u.name, img:shot }); }
-    catch (e) { return flash('Photo load nahi hua.', 'err'); }
+    try { const img = await compress(file); pushMsg(t.id, { ...base, type:'img', img }); }
+    catch (e) { return flash('Screenshot load nahi hua.', 'err'); }
   }
   render();
-}
-
-async function claimSubmit(f){
-  const u = me(); if (!u) return;
-  const fd = new FormData(f);
-  const file = fd.get('img');
-  if (!file || !file.size) return flash('Payment screenshot dalna zaroori hai.', 'err');
-  let shot;
-  try { shot = await compress(file); } catch (e) { return flash('Screenshot load nahi hua.', 'err'); }
-  postMsg(u.id, { type:'claim', role:'user', fromName:u.name, amount:S.claimAmt, txn:String(fd.get('txn')||'').trim(), img:shot, status:'pending' });
-  S.claimOpen = false; S.qrAmt = 0; S.claimAmt = 0;
-  flash('Claim bhej diya. Admin check karke coins add karega.');
-}
-
-function decideClaim(uid, id, ok){
-  const staff = me(); if (!isAdmin(staff)) return;
-  const c = getChats();
-  const th = c[uid]; if (!th) return;
-  const m = th.messages.find(x => x.id === id);
-  if (!m || m.status !== 'pending') return;
-  if (ok) {
-    const list = users();
-    const p = list.find(x => x.id === uid);
-    if (p) { p.coins = coinsOf(p) + Number(m.amount); save('vx_users', list); }
-  }
-  m.status = ok ? 'approved' : 'rejected';
-  m.decidedBy = staff.name;
-  saveChats(c);
-  postMsg(uid, { type:'sys', role:'sys', text: ok ? `${m.amount} coins aapke account me add ho gaye.` : 'Claim reject ho gaya. Detail ke liye chat par message karo.' });
-  flash(ok ? 'Coins add ho gaye.' : 'Claim reject kar diya.', ok ? 'ok' : 'err');
 }
 
 // ---------- events ----------
@@ -728,12 +718,7 @@ document.addEventListener('click', e => {
   if (!el || el.disabled) return;
   const a = el.dataset.act;
   if (a === 'tab') { S.tab = el.dataset.v; render(); }
-  else if (a === 'nav') {
-    S.page = el.dataset.v;
-    if (S.page !== 'chat') S.claimOpen = false;
-    if (S.page === 'chat' && isAdmin(me())) S.chatWith = null;
-    render();
-  }
+  else if (a === 'nav') { S.page = el.dataset.v; S.tkt = null; render(); }
   else if (a === 'sub') { S.sub = el.dataset.v; render(); }
   else if (a === 'game') { S.game = el.dataset.v; render(); }
   else if (a === 'join') joinT(el.dataset.id);
@@ -741,22 +726,13 @@ document.addEventListener('click', e => {
   else if (a === 'ban') toggleBan(el.dataset.id);
   else if (a === 'coins') setCoins(el.dataset.id);
   else if (a === 'selfcoins') selfCoins(el.dataset.v);
-  else if (a === 'addcoins') addCoinsStart();
-  else if (a === 'dlqr') {
-    const c = document.querySelector('#qrbox canvas');
-    if (!c) return flash('QR abhi ready nahi hai.', 'err');
-    const link = document.createElement('a');
-    link.href = c.toDataURL('image/png');
-    link.download = 'vortex-qr-' + S.qrAmt + '.png';
-    link.click();
-  }
-  else if (a === 'claim') { S.claimAmt = S.qrAmt; S.claimOpen = true; S.page = 'chat'; render(); }
-  else if (a === 'claimcancel') { S.claimOpen = false; render(); }
-  else if (a === 'open') { S.chatWith = el.dataset.id; render(); }
-  else if (a === 'chatback') { S.chatWith = null; render(); }
-  else if (a === 'claimok') decideClaim(el.dataset.uid, el.dataset.id, true);
-  else if (a === 'claimno') decideClaim(el.dataset.uid, el.dataset.id, false);
-  else if (a === 'logout') { save('vx_session', null); S.page = 'play'; S.tab = 'login'; S.qrAmt = 0; S.claimOpen = false; render(); }
+  else if (a === 'addopen') { S.addOpen = true; render(); }
+  else if (a === 'addclose') { S.addOpen = false; render(); }
+  else if (a === 'newtkt') newTicket();
+  else if (a === 'tkopen') { S.tkt = el.dataset.id; S.page = 'chat'; render(); }
+  else if (a === 'tkback') { S.tkt = null; render(); }
+  else if (a === 'tkclose') closeTk(el.dataset.id);
+  else if (a === 'logout') { save('vx_session', null); S.page = 'play'; S.tab = 'login'; S.tkt = null; S.addOpen = false; render(); }
 });
 document.addEventListener('change', e => {
   const el = e.target;
@@ -768,8 +744,7 @@ document.addEventListener('submit', e => {
   if (id === 'authForm') authSubmit(e.target);
   else if (id === 'tForm') createT(e.target);
   else if (id === 'payForm') savePaySettings(e.target);
-  else if (id === 'chatForm') chatSubmit(e.target);
-  else if (id === 'claimForm') claimSubmit(e.target);
+  else if (id === 'tkForm') tkSubmit(e.target);
 });
 
 // ---------- start ----------
