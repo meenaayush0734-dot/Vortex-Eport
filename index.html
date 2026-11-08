@@ -196,7 +196,7 @@ function compress(file){
 // ---------- support tickets ----------
 const getTk = () => load('vx_tickets', []);
 const saveTk = t => save('vx_tickets', t);
-const COOL_MS = 48 * 60 * 60 * 1000; // 2 din me 1 ticket
+const COOL_MS = 48 * 60 * 60 * 1000; // one ticket every 2 days
 const openTickets = () => getTk().filter(t => t.status === 'open').length;
 function cooldownLeft(u){
   const last = getTk().filter(t => t.userId === u.id)
@@ -222,14 +222,14 @@ function authView(){
     <div class="glass hero" style="padding:22px">
       <span class="tag">TOURNAMENT PLATFORM</span>
       <div class="ttl" style="font-size:24px;margin:12px 0 6px">READY TO WIN?</div>
-      <div style="opacity:.9;font-size:14px">Ek baar register karo, login is device par save rahega.</div>
+      <div style="opacity:.9;font-size:14px">Register once and your login will stay saved on this device.</div>
     </div>
     <div class="seg">
       <button data-act="tab" data-v="login" class="${isLogin?'on':''}">Login</button>
       <button data-act="tab" data-v="register" class="${!isLogin?'on':''}">Register</button>
     </div>
     <form id="authForm" class="glass">
-      ${isLogin ? '' : `<label>Naam / Team naam</label><input name="name" required maxlength="24" placeholder="Apna naam">`}
+      ${isLogin ? '' : `<label>Name / Team name</label><input name="name" required maxlength="24" placeholder="Your name">`}
       <label>Email</label>
       <input name="email" type="email" required placeholder="you@gmail.com">
       <label>Password</label>
@@ -243,7 +243,7 @@ function authView(){
 function banView(){
   return `<div class="center" style="width:100%"><div class="glass" style="text-align:center;padding:28px;width:100%">
     <div class="ttl" style="color:var(--red);font-size:18px">ACCOUNT BANNED</div>
-    <p class="mut" style="margin:12px 0 18px">Aapka account admin ne ban kar diya hai. Madad ke liye owner se contact karo.</p>
+    <p class="mut" style="margin:12px 0 18px">Your account has been banned by an admin. Contact the owner for help.</p>
     <button class="abtn" data-act="logout" style="width:100%;height:44px">Logout</button>
   </div></div>`;
 }
@@ -286,7 +286,7 @@ function playView(u){
   <div class="glass hero" style="padding:22px">
     <span class="tag">LIVE · ${esc(S.game)}</span>
     <div class="ttl" style="font-size:26px;margin:12px 0 6px;line-height:1.2">JOIN THE<br>BATTLE</div>
-    <div style="font-size:14px;opacity:.9">Coins se entry lo, slot pakdo, prize jeeto.</div>
+    <div style="font-size:14px;opacity:.9">Use coins to enter, grab a slot and win the prize.</div>
   </div>
   <div class="qa-row">
     ${qa(ICON.trophy,'My Matches','matches')}
@@ -296,7 +296,7 @@ function playView(u){
   <div class="seg">
     ${['Free Fire India','Free Fire MAX'].map(g => `<button data-act="game" data-v="${g}" class="${S.game===g?'on':''}">${g}</button>`).join('')}
   </div>
-  ${ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Is game ke liye abhi koi tournament nahi.</div>'}`;
+  ${ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">No tournaments for this game yet.</div>'}`;
 }
 
 function tDetailView(u){
@@ -321,7 +321,7 @@ function tDetailView(u){
         <div class="box"><span class="mut">Password</span><b>${esc(t.roomPass || '-')}</b></div>
       </div>
     </div>`
-    : `<div class="empty">Room ID abhi set nahi hua. Admin/owner jaldi set karega.</div>`;
+    : `<div class="empty">Room ID is not set yet. Admin/owner will set it soon.</div>`;
   return `
     <div class="row" style="margin-bottom:10px"><button class="abtn" data-act="tdback">← Back</button></div>
     <h2 class="ttl" style="font-size:18px">${esc(t.title)}</h2>
@@ -348,7 +348,7 @@ function matchesView(u){
         <div class="mut" style="margin-top:4px">${esc(fmtDate(t.date))}</div>
         <button class="gbtn sm" style="margin-top:12px" data-act="tdet" data-id="${esc(t.id)}">INFO</button>
       </div>`;
-    }).join('') : '<div class="empty">Abhi tak kisi tournament me join nahi kiya.</div>');
+    }).join('') : '<div class="empty">You have not joined any tournament yet.</div>');
 }
 
 // ----- chat -----
@@ -403,7 +403,7 @@ function ticketView(u){
     <form id="tkForm" class="glass tkbar">
       <textarea name="msg" rows="2" maxlength="500" placeholder="Type a message or problem..."></textarea>
       <div class="row" style="gap:8px">
-        <label class="abtn" style="margin:0;cursor:pointer">Screenshot<input name="img" type="file" accept="image/*" style="display:none"></label>
+        <label class="abtn" style="margin:0;position:relative;overflow:hidden;cursor:pointer">Screenshot<input name="img" type="file" accept="image/*" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px"></label>
         <button class="gbtn sm" type="submit">Send</button>
       </div>
     </form>`
@@ -426,10 +426,10 @@ function walletBox(u){
   const qr = getSet().qrImg || QR_DEFAULT;
   return `
   <div class="glass">
-    <div class="row"><div class="ttl" style="font-size:14px">ADD COINS</div><button class="abtn" data-act="addclose">Band karo</button></div>
-    <div class="mut" style="margin-top:4px">1 coin = ₹1 · QR scan karke payment karo</div>
+    <div class="row"><div class="ttl" style="font-size:14px">ADD COINS</div><button class="abtn" data-act="addclose">Close</button></div>
+    <div class="mut" style="margin-top:4px">1 coin = ₹1 · Scan the QR to pay</div>
     <div class="qrwrap"><img class="qrimg" src="${esc(qr)}" alt="Payment QR"></div>
-    <div class="note ok">English: After payment, take a screenshot, open the chat below and send the screenshot there.</div>
+    <div class="note ok">After payment, take a screenshot, open the chat below and send the screenshot there.</div>
     <div class="note ok">Hinglish: Payment hone ke baad screenshot lo, neeche wali chat me jao aur screenshot wahan bhejo.</div>
     <button class="gbtn" data-act="newtkt">CHAT KHOLO / SCREENSHOT BHEJO</button>
   </div>`;
@@ -442,14 +442,14 @@ const saveWd = w => save('vx_withdraws', w);
 
 function withdrawBox(u){
   const note = S.wdDone ? `
-    <div class="note ok">Withdraw request bhej di: ${S.wdDone} coins.</div>
+    <div class="note ok">Withdrawal request sent: ${S.wdDone} coins.</div>
     <div class="note ok">Hinglish: Withdraw request ho gayi. Ab chat banao aur apni UPI ID / details wahan bhejo.</div>
-    <div class="note ok">English: Withdraw request sent. Now open a chat and send your UPI ID / details there.</div>
+    <div class="note ok">Withdrawal request sent. Now open a chat and send your UPI ID / details there.</div>
     <button class="gbtn" data-act="wdchat">CHAT BANAO</button>` : '';
   return `
   <div class="glass">
     <div class="ttl" style="font-size:14px;margin-bottom:6px">WITHDRAW</div>
-    <div class="mut" style="margin-bottom:10px">Minimum ${MIN_WD} coins · Aapke paas ${coinsOf(u)} coins</div>
+    <div class="mut" style="margin-bottom:10px">Minimum ${MIN_WD} coins · You have ${coinsOf(u)} coins</div>
     <label>Amount (coins)</label>
     <input id="wdAmt" type="number" min="${MIN_WD}" max="${coinsOf(u)}" placeholder="${MIN_WD}">
     <button class="gbtn" data-act="withdraw">WITHDRAW REQUEST BHEJO</button>
@@ -460,17 +460,17 @@ function withdrawBox(u){
 function requestWithdraw(){
   const u = me(); if (!u) return;
   const v = Math.floor(Number(document.getElementById('wdAmt').value));
-  if (!(v >= MIN_WD)) return flash(`Minimum withdraw ${MIN_WD} coins hai.`, 'err');
+  if (!(v >= MIN_WD)) return flash(`Minimum withdrawal is ${MIN_WD} coins.`, 'err');
   const list = users();
   const p = list.find(x => x.id === u.id);
-  if (v > coinsOf(p)) return flash('Itne coins nahi hain.', 'err');
+  if (v > coinsOf(p)) return flash('Not enough coins.', 'err');
   p.coins = coinsOf(p) - v;
   save('vx_users', list);
   const w = getWd();
   w.unshift({ id:'W' + Date.now().toString(36).toUpperCase(), userId:u.id, userName:u.name, amount:v, status:'pending', at:new Date().toISOString() });
   saveWd(w);
   S.wdDone = v;
-  flash(`${v} coins ka withdraw request ho gaya.`);
+  flash(`Withdrawal request for ${v} coins created.`);
 }
 
 function decideWd(id, paid){
@@ -487,12 +487,12 @@ function decideWd(id, paid){
   w.decidedBy = u.name;
   w.decidedAt = new Date().toISOString();
   saveWd(list);
-  flash(paid ? 'Paid mark ho gaya.' : 'Reject ho gaya, coins wapas kar diye.', paid ? 'ok' : 'err');
+  flash(paid ? 'Marked as paid.' : 'Rejected, coins refunded.', paid ? 'ok' : 'err');
 }
 
 function wdPanel(){
   const list = getWd();
-  if (!list.length) return '<div class="empty">Abhi koi withdraw request nahi hai.</div>';
+  if (!list.length) return '<div class="empty">No withdrawal requests yet.</div>';
   return list.map(w => `
     <div class="glass urow">
       <div class="row"><div><b>${esc(w.userName)}</b><div class="mut">${esc(new Date(w.at).toLocaleString('en-IN'))}</div></div>
@@ -512,7 +512,7 @@ function accountView(u){
   ${walletBox(u)}
   ${withdrawBox(u)}
   <div class="glass">
-    <div class="mut">Naam</div><b>${esc(u.name)}</b>
+    <div class="mut">Name</div><b>${esc(u.name)}</b>
     <div class="mut" style="margin-top:12px">Email</div><b>${esc(u.email)}</b>
     <div class="mut" style="margin-top:12px">Role</div><b>${roleLabel(u.role)}</b>
   </div>
@@ -529,7 +529,7 @@ function roomRow(t){
         <div><label>Room ID</label><input id="rid_${esc(t.id)}" value="${esc(t.roomId || '')}" maxlength="30" style="margin:0"></div>
         <div><label>Password</label><input id="rpw_${esc(t.id)}" value="${esc(t.roomPass || '')}" maxlength="30" style="margin:0"></div>
       </div>
-      <button class="gbtn sm" style="margin-top:10px" data-act="roomsave" data-id="${esc(t.id)}">Room save karo</button>
+      <button class="gbtn sm" style="margin-top:10px" data-act="roomsave" data-id="${esc(t.id)}">Save room</button>
     </div>`;
 }
 
@@ -539,7 +539,7 @@ function tourPanel(){
   <div class="glass">
     <div class="ttl" style="font-size:14px;margin-bottom:12px">NAYA TOURNAMENT</div>
     <form id="tForm">
-      <label>Tournament naam</label>
+      <label>Tournament name</label>
       <input name="title" required maxlength="50" placeholder="Sunday Squad Cup">
       <label>Game</label>
       <select name="game"><option>Free Fire India</option><option>Free Fire MAX</option></select>
@@ -558,7 +558,7 @@ function tourPanel(){
     </form>
   </div>
   <h2 class="ttl" style="font-size:14px">SAARE TOURNAMENTS</h2>
-  ${all.length ? all.map(roomRow).join('') : '<div class="empty">Koi tournament nahi.</div>'}`;
+  ${all.length ? all.map(roomRow).join('') : '<div class="empty">No tournaments.</div>'}`;
 }
 
 function userRow(x, viewer){
@@ -588,13 +588,13 @@ function userRow(x, viewer){
 
 function usersPanel(u){
   const list = users().filter(x => x.role !== 'owner');
-  return `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: sab users ko ban/coins set kar sakte ho.' : 'Admin: players ko ban/coins set kar sakte ho.'}</div>` +
-    (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">Abhi koi registered user nahi hai.</div>');
+  return `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: you can ban users and set coins for everyone.' : 'Admin: you can ban players and set their coins.'}</div>` +
+    (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">No registered users yet.</div>');
 }
 
 function selfCard(u){
   return `<div class="glass urow">
-    <div class="row"><div><b>Mera account (${roleLabel(u.role)})</b><div class="mut">Apne coins khud set ya add karo</div></div><span class="coinchip">${ICON.coin} ${coinsOf(u)}</span></div>
+    <div class="row"><div><b>My account (${roleLabel(u.role)})</b><div class="mut">Set or add your own coins</div></div><span class="coinchip">${ICON.coin} ${coinsOf(u)}</span></div>
     <label style="margin-top:12px">Amount</label>
     <div class="row" style="gap:8px;flex-wrap:nowrap"><input id="c_self" type="number" min="0" value="0" style="margin:0"><button class="abtn" data-act="selfcoins" data-v="set">Set</button><button class="abtn ok" data-act="selfcoins" data-v="add">Add</button></div>
   </div>`;
@@ -603,12 +603,12 @@ function selfCard(u){
 function selfCoins(mode){
   const u = me(); if (!isAdmin(u)) return;
   const v = Math.floor(Number(document.getElementById('c_self').value));
-  if (!(v >= 0) || (mode === 'add' && v === 0)) return flash('Valid amount daalo.', 'err');
+  if (!(v >= 0) || (mode === 'add' && v === 0)) return flash('Enter a valid amount.', 'err');
   const list = users();
   const p = list.find(x => x.id === u.id);
   p.coins = mode === 'add' ? coinsOf(p) + v : v;
   save('vx_users', list);
-  flash(mode === 'add' ? `${v} coins add ho gaye.` : `Coins ${v} set ho gaye.`);
+  flash(mode === 'add' ? `${v} coins added.` : `Coins set to ${v}.`);
 }
 
 function payPanel(){
@@ -618,9 +618,9 @@ function payPanel(){
   <div class="glass">
     <div class="ttl" style="font-size:14px;margin-bottom:12px">PAYMENT SETTINGS</div>
     <form id="payForm">
-      <label>Payment QR (abhi ye dikh raha hai)</label>
+      <label>Payment QR (current)</label>
       <div class="qrwrap"><img class="qrimg" src="${esc(cur)}" alt="current QR"></div>
-      <label>Naya QR upload karo (optional)</label>
+      <label>Upload new QR (optional)</label>
       <input name="qr" type="file" accept="image/*">
       <button class="gbtn" type="submit">SAVE</button>
     </form>
@@ -683,7 +683,7 @@ function render(){
 function makeQR(amt){
   const box = document.getElementById('qrbox');
   box.innerHTML = '';
-  if (typeof QRCode === 'undefined') { box.textContent = 'QR load nahi hua. Internet check karo.'; return; }
+  if (typeof QRCode === 'undefined') { box.textContent = 'QR did not load. Check your internet.'; return; }
   new QRCode(box, { text: upiLink(amt), width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
 }
 
@@ -696,14 +696,14 @@ function authSubmit(f){
   const setErr = m => { const e = $('#err'); if (e) e.textContent = m; };
 
   if (S.tab === 'register') {
-    if (list.some(u => u.email === email)) return setErr('Ye email already registered hai, Login karo.');
+    if (list.some(u => u.email === email)) return setErr('This email is already registered. Please log in.');
     const u = { id:'u_' + Date.now().toString(36), name:String(d.name||'').trim(), email, password:pass, role:'player', coins:0, banned:false };
     list.push(u);
     save('vx_users', list);
     save('vx_session', u.id);
   } else {
     const u = list.find(x => x.email === email && x.password === pass);
-    if (!u) return setErr('Email ya password galat hai.');
+    if (!u) return setErr('Email or password is wrong.');
     save('vx_session', u.id);
   }
   S.page = 'play';
@@ -715,15 +715,15 @@ function joinT(id){
   const ts = load('vx_tournaments', []);
   const t = ts.find(x => x.id === id);
   if (!t || t.players.includes(u.id)) return;
-  if (t.players.length >= t.slots) return flash('Slots full ho gaye hain.', 'err');
+  if (t.players.length >= t.slots) return flash('Slots are full.', 'err');
   const list = users();
   const p = list.find(x => x.id === u.id);
-  if (coinsOf(p) < (Number(t.fee) || 0)) return flash(`Coins kam hain. Entry ${t.fee} coins hai.`, 'err');
+  if (coinsOf(p) < (Number(t.fee) || 0)) return flash(`Not enough coins. Entry is ${t.fee} coins.`, 'err');
   p.coins = coinsOf(p) - (Number(t.fee) || 0);
   t.players.push(u.id);
   save('vx_users', list);
   save('vx_tournaments', ts);
-  flash('Tournament join ho gaya!');
+  flash('Joined the tournament!');
 }
 
 function createT(f){
@@ -738,18 +738,18 @@ function createT(f){
     roomId:String(d.roomId||'').trim(), roomPass:String(d.roomPass||'').trim()
   });
   save('vx_tournaments', ts);
-  flash('Tournament publish ho gaya.');
+  flash('Tournament published.');
 }
 
 function saveRoom(id){
   const u = me(); if (!isAdmin(u)) return;
   const ts = load('vx_tournaments', []);
   const t = ts.find(x => x.id === id); if (!t) return;
-  if (u.role !== 'owner' && t.createdBy !== u.id) return flash('Ye tournament aapne nahi banaya.', 'err');
+  if (u.role !== 'owner' && t.createdBy !== u.id) return flash('You did not create this tournament.', 'err');
   t.roomId = String(document.getElementById('rid_' + id).value || '').trim();
   t.roomPass = String(document.getElementById('rpw_' + id).value || '').trim();
   save('vx_tournaments', ts);
-  flash('Room ID aur password save ho gaya.');
+  flash('Room ID and password saved.');
 }
 
 function delT(id){
@@ -758,7 +758,7 @@ function delT(id){
   const t = ts.find(x => x.id === id);
   if (!t || (u.role !== 'owner' && t.createdBy !== u.id)) return;
   save('vx_tournaments', ts.filter(x => x.id !== id));
-  flash('Tournament delete ho gaya.');
+  flash('Tournament deleted.');
 }
 
 function setRole(id, role){
@@ -768,7 +768,7 @@ function setRole(id, role){
   if (!t || t.role === 'owner') return;
   t.role = role === 'admin' ? 'admin' : 'player';
   save('vx_users', list);
-  flash(`${t.name} ab ${t.role === 'admin' ? 'Admin' : 'Player'} hai.`);
+  flash(`${t.name} is now ${t.role === 'admin' ? 'Admin' : 'Player'}.`);
 }
 
 function toggleBan(id){
@@ -778,7 +778,7 @@ function toggleBan(id){
   if (!t || !canManage(u, t)) return;
   t.banned = !t.banned;
   save('vx_users', list);
-  flash(`${t.name} ${t.banned ? 'ban ho gaya' : 'unban ho gaya'}.`, t.banned ? 'err' : 'ok');
+  flash(`${t.name} ${t.banned ? 'banned' : 'unbanned'}.`, t.banned ? 'err' : 'ok');
 }
 
 function setCoins(id){
@@ -790,7 +790,7 @@ function setCoins(id){
   const n = Math.max(0, Math.floor(Number(v && v.value) || 0));
   t.coins = n;
   save('vx_users', list);
-  flash(`${t.name} ke coins ${n} set ho gaye.`);
+  flash(`${t.name}'s coins set to ${n}.`);
 }
 
 async function savePaySettings(f){
@@ -799,10 +799,10 @@ async function savePaySettings(f){
   const file = d.get('qr');
   if (file && file.size) {
     try { next.qrImg = await compress(file); }
-    catch (e) { return flash('QR image load nahi hua.', 'err'); }
+    catch (e) { return flash('Could not load the QR image.', 'err'); }
   }
   save('vx_settings', next);
-  flash('Payment settings save ho gayi.');
+  flash('Payment settings saved.');
 }
 
 function newTicket(){
