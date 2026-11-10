@@ -93,6 +93,18 @@ nav button .ic{width:22px;height:22px}
 .coinchip{cursor:pointer;font-family:inherit}
 .tkbar{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;margin:0;padding:12px;z-index:4;box-sizing:border-box}
 .tkbar textarea{margin-bottom:8px}
+main.pg-R{animation:pgR .38s cubic-bezier(.22,.61,.36,1) both}
+main.pg-L{animation:pgL .38s cubic-bezier(.22,.61,.36,1) both}
+@keyframes pgR{from{opacity:0;transform:translate3d(36px,0,0)}to{opacity:1;transform:none}}
+@keyframes pgL{from{opacity:0;transform:translate3d(-36px,0,0)}to{opacity:1;transform:none}}
+nav{background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.04));
+    backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.25)}
+nav button{transition:background .35s ease,transform .25s ease,color .3s ease,box-shadow .3s ease}
+nav button:active{transform:scale(.92)}
+nav button.on{background:linear-gradient(135deg,rgba(168,85,247,.55),rgba(99,102,241,.45));box-shadow:0 8px 22px rgba(124,58,237,.35),inset 0 1px 0 rgba(255,255,255,.25)}
+@media (prefers-reduced-motion:reduce){main.pg-R,main.pg-L{animation:none}}
 </style>
 </head>
 <body>
@@ -131,6 +143,15 @@ let SYNC_READY = false;
 const fbConfigured = () => typeof firebase !== 'undefined' && FB_CONFIG.databaseURL && !FB_CONFIG.databaseURL.includes('PASTE');
 const isTyping = () => { const a = document.activeElement; return !!a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT'); };
 
+// Firebase drops empty arrays and turns lists into objects; put them back into shape
+function fixData(k, v){
+  if (v && typeof v === 'object' && !Array.isArray(v)) v = Object.values(v);
+  if (!Array.isArray(v)) return v;
+  if (k === 'vx_tournaments') v.forEach(t => { t.players = Array.isArray(t.players) ? t.players : []; });
+  if (k === 'vx_tickets') v.forEach(t => { t.messages = Array.isArray(t.messages) ? t.messages : []; });
+  return v;
+}
+
 function startSync(done){
   if (!fbConfigured()) { SYNC_READY = true; return done(); }
   firebase.initializeApp(FB_CONFIG);
@@ -145,9 +166,11 @@ function startSync(done){
       if (v == null) {
         // Cloud is empty for this key: push this device's existing data up so nothing is lost
         const local = localStorage.getItem(k);
-        if (local) { try { FB_DB.ref('vx/' + k).set(JSON.parse(local)); } catch (e) {} }
+        if (local) { try { FB_DB.ref('vx/' + k).set(local); } catch (e) {} }
       } else {
-        const s = JSON.stringify(v);
+        let data = typeof v === 'string' ? JSON.parse(v) : v;
+        data = fixData(k, data);
+        const s = JSON.stringify(data);
         MEM[k] = s;
         try { localStorage.setItem(k, s); } catch (e) {}
       }
@@ -161,7 +184,7 @@ const save = (k, v) => {
   const s = JSON.stringify(v);
   MEM[k] = s;
   try { localStorage.setItem(k, s); } catch (e) {}
-  if (FB_DB && SYNC_KEYS.includes(k)) FB_DB.ref('vx/' + k).set(v);
+  if (FB_DB && SYNC_KEYS.includes(k)) FB_DB.ref('vx/' + k).set(s);
 };
 
 // ---------- icons ----------
@@ -691,6 +714,7 @@ function adminView(u){
   ${sub==='users' ? selfCard(u) + usersPanel(u) : sub==='pay' ? payPanel() : sub==='wd' ? wdPanel() : tourPanel()}`;
 }
 
+let PREV_PAGE = null;
 function shell(u){
   const tabs = [['play',ICON.play,'Play'],['matches',ICON.trophy,'Matches'],['chat',ICON.chat,'Chat']];
   if (isAdmin(u)) tabs.push(['admin',ICON.shield,'Admin']);
@@ -703,6 +727,12 @@ function shell(u){
   else if (S.page === 'admin' && isAdmin(u)) body = adminView(u);
   else body = accountView(u);
 
+  const order = tabs.map(t => t[0]);
+  let animCls = '';
+  if (S.page !== PREV_PAGE) {
+    animCls = (order.indexOf(S.page) < order.indexOf(PREV_PAGE)) ? 'pg-L' : 'pg-R';
+    PREV_PAGE = S.page;
+  }
   const note = S.flash ? `<div class="note ${S.flash.t}">${esc(S.flash.m)}</div>` : '';
   S.flash = null;
   return `
@@ -713,7 +743,7 @@ function shell(u){
       <span class="pill">${roleLabel(u.role).toUpperCase()}</span>
     </div>
   </header>
-  <main>${note}${body}</main>
+  <main class="${animCls}">${note}${body}</main>
   <nav>${tabs.map(([k,ic,l]) => `<button data-act="nav" data-v="${k}" class="${S.page===k?'on':''}"><i>${ic}</i>${l}</button>`).join('')}</nav>`;
 }
 
