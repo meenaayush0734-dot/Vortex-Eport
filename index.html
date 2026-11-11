@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Vortex Esport</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7C3AED">
@@ -12,6 +12,7 @@
 <style>
 :root{--bg:#07040F;--line:rgba(167,139,250,.2);--gold:#FACC15;--red:#FF4D6D;--ok:#4ADE80;--cyan:#22D3EE;--mut:#9C92BD}
 *{box-sizing:border-box}
+html,body{overflow-x:hidden;touch-action:manipulation}
 body{margin:0;background:#040208;font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#F4F1FF}
 #app{max-width:420px;min-height:100vh;margin:0 auto;padding-bottom:110px;background:radial-gradient(circle at 85% -5%,rgba(124,58,237,.45),transparent 45%),radial-gradient(circle at 0% 40%,rgba(34,211,238,.12),transparent 40%),var(--bg)}
 header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 8px;gap:8px}
@@ -82,7 +83,7 @@ select.sel{width:auto;height:38px;margin:0;padding:0 10px;font-size:13px}
 .claim .btns{display:flex;gap:8px;margin-top:10px}
 .claim .btns button{flex:1}
 .thread{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:16px;margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid var(--line);width:100%;color:inherit;font-family:inherit;text-align:left}
-nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;height:66px;border-radius:24px;background:rgba(18,12,34,.88);backdrop-filter:blur(12px);border:1px solid var(--line);display:flex;padding:6px;gap:4px;z-index:5}
+nav{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;height:66px;border-radius:24px;background:rgba(18,12,34,.88);backdrop-filter:blur(12px);border:1px solid var(--line);display:flex;padding:6px;gap:4px;z-index:5}
 nav button{flex:1;border:0;background:none;color:#8F86B0;font-family:inherit;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:18px;cursor:pointer}
 nav button i{font-style:normal;font-size:18px}
 nav button.on{color:#fff;background:linear-gradient(135deg,rgba(168,85,247,.5),rgba(34,211,238,.25));box-shadow:0 0 16px rgba(139,92,246,.45)}
@@ -93,18 +94,6 @@ nav button .ic{width:22px;height:22px}
 .coinchip{cursor:pointer;font-family:inherit}
 .tkbar{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;margin:0;padding:12px;z-index:4;box-sizing:border-box}
 .tkbar textarea{margin-bottom:8px}
-main.pg-R{animation:pgR .38s cubic-bezier(.22,.61,.36,1) both}
-main.pg-L{animation:pgL .38s cubic-bezier(.22,.61,.36,1) both}
-@keyframes pgR{from{opacity:0;transform:translate3d(36px,0,0)}to{opacity:1;transform:none}}
-@keyframes pgL{from{opacity:0;transform:translate3d(-36px,0,0)}to{opacity:1;transform:none}}
-nav{background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.04));
-    backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
-    border:1px solid rgba(255,255,255,.22);
-    box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.25)}
-nav button{transition:background .35s ease,transform .25s ease,color .3s ease,box-shadow .3s ease}
-nav button:active{transform:scale(.92)}
-nav button.on{background:linear-gradient(135deg,rgba(168,85,247,.55),rgba(99,102,241,.45));box-shadow:0 8px 22px rgba(124,58,237,.35),inset 0 1px 0 rgba(255,255,255,.25)}
-@media (prefers-reduced-motion:reduce){main.pg-R,main.pg-L{animation:none}}
 </style>
 </head>
 <body>
@@ -727,12 +716,6 @@ function shell(u){
   else if (S.page === 'admin' && isAdmin(u)) body = adminView(u);
   else body = accountView(u);
 
-  const order = tabs.map(t => t[0]);
-  let animCls = '';
-  if (S.page !== PREV_PAGE) {
-    animCls = (order.indexOf(S.page) < order.indexOf(PREV_PAGE)) ? 'pg-L' : 'pg-R';
-    PREV_PAGE = S.page;
-  }
   const note = S.flash ? `<div class="note ${S.flash.t}">${esc(S.flash.m)}</div>` : '';
   S.flash = null;
   return `
@@ -743,7 +726,7 @@ function shell(u){
       <span class="pill">${roleLabel(u.role).toUpperCase()}</span>
     </div>
   </header>
-  <main class="${animCls}">${note}${body}</main>
+  <main>${note}${body}</main>
   <nav>${tabs.map(([k,ic,l]) => `<button data-act="nav" data-v="${k}" class="${S.page===k?'on':''}"><i>${ic}</i>${l}</button>`).join('')}</nav>`;
 }
 
