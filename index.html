@@ -97,6 +97,8 @@ nav button .ic{width:22px;height:22px}
 <div id="app"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -113,7 +115,64 @@ const save = (k, v) => {
   const s = JSON.stringify(v);
   MEM[k] = s;
   try { localStorage.setItem(k, s); } catch (e) {}
+  if (DB && CLOUD_READY[k]) { try { DB.ref('vx/' + k).set(s); } catch (e) {} }
 };
+
+// ---------- realtime sync (Firebase Realtime Database) ----------
+const FB_CONFIG = {
+  apiKey: "AIzaSyDct-TAfTqwQfkI5ThbNJtesCNdLUp75Lw",
+  authDomain: "vortex-47757.firebaseapp.com",
+  databaseURL: "https://vortex-47757-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "vortex-47757",
+  storageBucket: "vortex-47757.firebasestorage.app",
+  messagingSenderId: "434824252904",
+  appId: "1:434824252904:web:93399da8e12f2a55cda85d"
+};
+// Shared data goes to the cloud. Session and referral-used stay per device.
+const CLOUD_KEYS = ['vx_users', 'vx_tournaments', 'vx_settings', 'vx_tickets'];
+const CLOUD_READY = {};
+let DB = null;
+try {
+  if (window.firebase) {
+    if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    DB = firebase.database();
+  }
+} catch (e) { DB = null; }
+
+let refreshTimer = null;
+function refreshSoon() {
+  const a = document.activeElement;
+  // do not wipe a form the user is typing in; refresh once they leave the field
+  if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) {
+    a.addEventListener('blur', () => setTimeout(refreshSoon, 150), { once: true });
+    return;
+  }
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => render(), 50);
+}
+
+function startCloud() {
+  if (!DB) return; // no Firebase: app keeps working on this device only
+  CLOUD_KEYS.forEach(k => {
+    DB.ref('vx/' + k).on('value', snap => {
+      const val = snap.val();
+      if (val == null || typeof val !== 'string') {
+        // cloud empty for this key: upload our local copy once
+        if (!CLOUD_READY[k]) {
+          CLOUD_READY[k] = true;
+          if (MEM[k] != null) DB.ref('vx/' + k).set(MEM[k]);
+        }
+        return;
+      }
+      CLOUD_READY[k] = true;
+      if (val !== MEM[k]) {
+        MEM[k] = val;
+        try { localStorage.setItem(k, val); } catch (e) {}
+        refreshSoon();
+      }
+    });
+  });
+}
 
 // ---------- icons & constants ----------
 const SV = p => `<svg viewBox="0 0 24 24" class="ic" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -219,19 +278,19 @@ function authView(){
     <div class="glass hero" style="padding:22px">
       <span class="tag">TOURNAMENT PLATFORM</span>
       <div class="ttl" style="font-size:24px;margin:12px 0 6px">READY TO WIN?</div>
-      <div style="opacity:.9;font-size:14px">Ek baar register karo, login is device par save rahega.</div>
+      <div style="opacity:.9;font-size:14px">Register once. Your login stays saved on this device.</div>
     </div>
     <div class="seg">
       <button data-act="tab" data-v="login" class="${isLogin?'on':''}">Login</button>
       <button data-act="tab" data-v="register" class="${!isLogin?'on':''}">Register</button>
     </div>
     <form id="authForm" class="glass">
-      ${isLogin ? '' : `<label>Naam / Team naam</label><input name="name" required maxlength="24" placeholder="Apna naam">`}
+      ${isLogin ? '' : `<label>Name / Team name</label><input name="name" required maxlength="24" placeholder="Apna naam">`}
       <label>Email</label>
       <input name="email" type="email" required placeholder="you@gmail.com">
       <label>Password</label>
       <input name="password" type="password" required minlength="4" placeholder="Password">
-      ${isLogin ? '' : `<label>Referral code (optional)</label><input name="ref" maxlength="8" placeholder="Dost ka code" style="text-transform:uppercase">`}
+      ${isLogin ? '' : `<label>Referral code (optional)</label><input name="ref" maxlength="8" placeholder="Friend's code" style="text-transform:uppercase">`}
       <div class="errbox" id="err"></div>
       <button class="gbtn" type="submit">${isLogin ? 'LOGIN' : 'REGISTER & START'}</button>
     </form>
@@ -241,7 +300,7 @@ function authView(){
 function banView(){
   return `<div class="center" style="width:100%"><div class="glass" style="text-align:center;padding:28px;width:100%">
     <div class="ttl" style="color:var(--red);font-size:18px">ACCOUNT BANNED</div>
-    <p class="mut" style="margin:12px 0 18px">Aapka account admin ne ban kar diya hai. Madad ke liye owner se contact karo.</p>
+    <p class="mut" style="margin:12px 0 18px">Your account has been banned by an admin. Contact the owner for help.</p>
     <button class="abtn" data-act="logout" style="width:100%;height:44px">Logout</button>
   </div></div>`;
 }
@@ -280,7 +339,7 @@ function playView(u){
   <div class="glass hero" style="padding:22px">
     <span class="tag">LIVE · ${esc(S.game)}</span>
     <div class="ttl" style="font-size:26px;margin:12px 0 6px;line-height:1.2">JOIN THE<br>BATTLE</div>
-    <div style="font-size:14px;opacity:.9">Coins se entry lo, slot pakdo, prize jeeto.</div>
+    <div style="font-size:14px;opacity:.9">Use coins to enter, grab a slot and win prizes.</div>
   </div>
   <div class="qa-row">
     ${qa(ICON.trophy,'My Matches','matches')}
@@ -290,13 +349,13 @@ function playView(u){
   <div class="seg">
     ${GAMES.map(g => `<button data-act="game" data-v="${g}" class="${S.game===g?'on':''}">${g}</button>`).join('')}
   </div>
-  ${ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Is game ke liye abhi koi tournament nahi.</div>'}`;
+  ${ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">No tournaments for this game yet.</div>'}`;
 }
 
 function matchesView(u){
   const ts = load('vx_tournaments', []).filter(t => t.players.includes(u.id));
   return `<h2 class="ttl">MY MATCHES</h2>` +
-    (ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">Abhi tak kisi tournament me join nahi kiya.</div>');
+    (ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">You have not joined any tournament yet.</div>');
 }
 
 // ----- support tickets -----
@@ -334,15 +393,15 @@ function ticketRow(t){
 
 function newChatBox(u){
   const at = nextChatAt(u.id);
-  if (at > Date.now()) return `<div class="note err">2 din me ek hi ticket ban sakta hai. Agla ticket: ${esc(fmt(at))} ke baad.</div>`;
+  if (at > Date.now()) return `<div class="note err">You can open only one ticket every 2 days. Next ticket: ${esc(fmt(at))}.</div>`;
   if (!S.newOpen) return `<button class="gbtn" data-act="newopen" style="margin-bottom:14px">+ NEW CHAT</button>`;
   return `<form id="newForm" class="glass">
-    <div class="ttl" style="font-size:14px;margin-bottom:10px">NAYA TICKET</div>
+    <div class="ttl" style="font-size:14px;margin-bottom:10px">NEW TICKET</div>
     <label>Subject</label>
-    <input name="subject" required maxlength="60" placeholder="Jaise: Coins nahi aaye">
+    <input name="subject" required maxlength="60" placeholder="e.g. Coins not received">
     <label>Message (optional)</label>
     <textarea name="msg" rows="3" maxlength="500"></textarea>
-    <button class="gbtn" type="submit">TICKET BANAO</button>
+    <button class="gbtn" type="submit">CREATE TICKET</button>
     <button class="abtn" type="button" data-act="newcancel" style="width:100%;margin-top:8px">Cancel</button>
   </form>`;
 }
@@ -356,7 +415,7 @@ function claimFormView(){
       <input name="txn" maxlength="40" placeholder="Transaction ID">
       <label>Payment screenshot (zaroori)</label>
       <input name="img" type="file" accept="image/*" required>
-      <button class="gbtn" type="submit">CLAIM BHEJO</button>
+      <button class="gbtn" type="submit">SUBMIT CLAIM</button>
     </form>
     <button class="abtn" data-act="claimcancel" style="width:100%;margin-top:8px">Cancel</button>
   </div>`;
@@ -367,20 +426,20 @@ function ticketView(u, tid){
   const staff = isAdmin(u);
   if (!t || (!staff && t.userId !== u.id)) { S.ticketId = null; return chatView(u); }
   const open = t.status === 'open';
-  const head = `<div class="row" style="margin-bottom:10px"><button class="abtn" data-act="tkback">← Back</button>${staff && open ? `<button class="abtn danger" data-act="close" data-id="${t.id}">Ticket close</button>` : ''}</div>
+  const head = `<div class="row" style="margin-bottom:10px"><button class="abtn" data-act="tkback">← Back</button>${staff && open ? `<button class="abtn danger" data-act="close" data-id="${t.id}">Close ticket</button>` : ''}</div>
     <div class="glass" style="padding:14px 16px;margin-bottom:12px"><b>${esc(t.subject)}</b>
     <div class="mut" style="margin-top:4px">${staff ? esc(t.userName) + ' · ' : ''}<span class="badge ${open?'good':'bad'}">${open?'OPEN':'CLOSED'}</span></div></div>`;
-  const msgs = t.messages.length ? t.messages.map(m => bubble(m, t, u, open)).join('') : '<div class="empty">Abhi koi message nahi.</div>';
+  const msgs = t.messages.length ? t.messages.map(m => bubble(m, t, u, open)).join('') : '<div class="empty">No messages yet.</div>';
   const composer = open
     ? `<form id="chatForm" class="glass" style="margin-top:12px">
         <input type="hidden" name="tid" value="${t.id}">
-        <textarea name="msg" rows="2" maxlength="500" placeholder="Message likho..."></textarea>
+        <textarea name="msg" rows="2" maxlength="500" placeholder="Type a message..."></textarea>
         <div class="row" style="gap:8px">
           <label class="abtn fileBtn" style="margin:0">Photo<input name="img" type="file" accept="image/*"></label>
           <button class="gbtn sm" type="submit">Send</button>
         </div>
       </form>`
-    : '<div class="note err" style="margin-top:12px">Ye ticket band ho chuka hai.</div>';
+    : '<div class="note err" style="margin-top:12px">This ticket is closed.</div>';
   return head + msgs + composer;
 }
 
@@ -392,7 +451,7 @@ function chatView(u){
     .sort((a, b) => ((a.status === 'open' ? 0 : 1) - (b.status === 'open' ? 0 : 1)) || b.createdAt.localeCompare(a.createdAt));
   return `<h2 class="ttl">${staff ? 'ALL TICKETS' : 'SUPPORT'}</h2>`
     + (staff ? '' : newChatBox(u))
-    + (list.length ? list.map(ticketRow).join('') : '<div class="empty">Abhi koi ticket nahi hai.</div>');
+    + (list.length ? list.map(ticketRow).join('') : '<div class="empty">No tickets yet.</div>');
 }
 
 // ----- wallet -----
@@ -401,24 +460,24 @@ function walletBox(u){
   const payQR = `<div class="glass" style="text-align:center">
     <div class="ttl" style="font-size:14px;margin-bottom:10px">PAYMENT QR</div>
     <img class="payqr" src="${PAYQR}" alt="Payment QR">
-    <div class="mut" style="margin-top:8px">QR scan karke pay karo, phir Claim karo.</div>
+    <div class="mut" style="margin-top:8px">Scan the QR to pay, then tap Claim.</div>
   </div>`;
-  if (!s.upiId) return payQR + `<div class="note err">Admin ne abhi UPI ID set nahi ki hai.</div>`;
+  if (!s.upiId) return payQR + `<div class="note err">Admin has not set a UPI ID yet.</div>`;
   const qr = S.qrAmt ? `
     <div class="glass">
       <div class="ttl" style="font-size:14px">PAY ₹${S.qrAmt} = ${S.qrAmt} COINS</div>
-      <div class="mut" style="margin-top:4px">1 coin = ₹1. QR scan karo ya Pay button dabao.</div>
+      <div class="mut" style="margin-top:4px">1 coin = ₹1. Scan the QR or tap Pay.</div>
       <div class="qrwrap"><div id="qrbox"></div></div>
       <div class="grid2" style="margin-bottom:10px">
         <button class="abtn" data-act="dlqr">Download QR</button>
         <a class="abtn" href="${esc(upiLink(S.qrAmt))}">Pay via UPI</a>
       </div>
-      <button class="gbtn" data-act="claim">Payment kar diya, Claim Coins</button>
+      <button class="gbtn" data-act="claim">Paid? Claim Coins</button>
     </div>` : '';
   return payQR + `
     <div class="glass">
-      <div class="ttl" style="font-size:14px;margin-bottom:10px">COINS ADD KARO</div>
-      <label>Amount (10 se 1,00,000)</label>
+      <div class="ttl" style="font-size:14px;margin-bottom:10px">ADD COINS</div>
+      <label>Amount (10 to 1,00,000)</label>
       <div class="row" style="gap:8px;flex-wrap:nowrap">
         <input id="amt" type="number" min="10" max="100000" value="${S.qrAmt || 100}" style="margin:0">
         <button class="gbtn sm" data-act="addcoins">Add</button>
@@ -430,12 +489,12 @@ function referralCard(u){
   const count = users().filter(x => x.referredBy === u.id).length;
   return `<div class="glass">
     <div class="ttl" style="font-size:14px">REFERRAL CODE</div>
-    <div class="mut" style="margin-top:4px">Dost ko ye code do. Naya account banakar ye code dale to usko 5 coins, aur aapko 5 coins milenge.</div>
+    <div class="mut" style="margin-top:4px">Share this code with a friend. When they register with it, they get 5 coins and you get 5 coins.</div>
     <div class="row" style="margin-top:12px">
       <span class="ttl" style="font-size:22px;letter-spacing:3px;color:var(--cyan)">${esc(u.ref)}</span>
       <button class="abtn" data-act="copyref">Copy</button>
     </div>
-    <div class="mut" style="margin-top:10px">Ab tak referrals: ${count}</div>
+    <div class="mut" style="margin-top:10px">Total referrals: ${count}</div>
   </div>`;
 }
 
@@ -449,13 +508,13 @@ function accountView(u){
   </div>
   ${referralCard(u)}
   ${walletBox(u)}
-  ${reqs.length ? `<h2 class="ttl" style="font-size:14px">MERI CLAIM REQUESTS</h2>` + reqs.map(t => {
+  ${reqs.length ? `<h2 class="ttl" style="font-size:14px">MY CLAIM REQUESTS</h2>` + reqs.map(t => {
       const c = t.messages.find(m => m.type === 'claim') || {};
       return `<div class="glass row"><div><b>${Number(c.amount)} coins</b><div class="mut">${esc(fmt(t.createdAt))}</div></div>
       <span class="badge ${c.status==='approved'?'good':c.status==='rejected'?'bad':'warn'}">${(c.status||'pending').toUpperCase()}</span></div>`;
     }).join('') : ''}
   <div class="glass">
-    <div class="mut">Naam</div><b>${esc(u.name)}</b>
+    <div class="mut">Name</div><b>${esc(u.name)}</b>
     <div class="mut" style="margin-top:12px">Email</div><b>${esc(u.email)}</b>
     <div class="mut" style="margin-top:12px">Role</div><b>${roleLabel(u.role)}</b>
   </div>
@@ -468,9 +527,9 @@ function tourForm(){
   const v = (k, d) => t ? esc(t[k]) : d;
   return `
   <div class="glass">
-    <div class="ttl" style="font-size:14px;margin-bottom:12px">${t ? 'TOURNAMENT EDIT' : 'NAYA TOURNAMENT'}</div>
+    <div class="ttl" style="font-size:14px;margin-bottom:12px">${t ? 'EDIT TOURNAMENT' : 'NEW TOURNAMENT'}</div>
     <form id="tForm">
-      <label>Tournament naam</label>
+      <label>Tournament name</label>
       <input name="title" required maxlength="50" value="${v('title','')}" placeholder="Sunday Squad Cup">
       <label>Game</label>
       <select name="game">${GAMES.map(g => `<option ${t && t.game===g ? 'selected' : ''}>${g}</option>`).join('')}</select>
@@ -501,7 +560,7 @@ function tourPanel(u){
           <button class="abtn" data-act="edit" data-id="${esc(t.id)}">Edit</button>
           <button class="abtn danger" data-act="del" data-id="${esc(t.id)}">Delete</button>
         </div>
-      </div>`).join('') : '<div class="empty">Koi tournament nahi.</div>');
+      </div>`).join('') : '<div class="empty">No tournaments.</div>');
 }
 
 function userRow(x, viewer){
@@ -529,7 +588,7 @@ function userRow(x, viewer){
 
 function selfCard(u){
   return `<div class="glass urow">
-    <div class="row"><div><b>Mera account (${roleLabel(u.role)})</b><div class="mut">Apne coins khud set ya add karo</div></div><span class="coinchip">${ICON.coin} ${coinsOf(u)}</span></div>
+    <div class="row"><div><b>My account (${roleLabel(u.role)})</b><div class="mut">Set or add your own coins</div></div><span class="coinchip">${ICON.coin} ${coinsOf(u)}</span></div>
     <label style="margin-top:12px">Amount</label>
     <div class="row" style="gap:8px;flex-wrap:nowrap"><input id="c_self" type="number" min="0" value="0" style="margin:0"><button class="abtn" data-act="selfcoins" data-v="set">Set</button><button class="abtn ok" data-act="selfcoins" data-v="add">Add</button></div>
   </div>`;
@@ -537,8 +596,8 @@ function selfCard(u){
 
 function usersPanel(u){
   const list = users().filter(x => x.role !== 'owner');
-  return selfCard(u) + `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: sab users ko ban/coins set kar sakte ho.' : 'Admin: players ko ban/coins set kar sakte ho.'}</div>` +
-    (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">Abhi koi registered user nahi hai.</div>');
+  return selfCard(u) + `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: you can ban users and set coins for everyone.' : 'Admin: you can ban players and set their coins.'}</div>` +
+    (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">No registered users yet.</div>');
 }
 
 function payPanel(){
@@ -546,9 +605,9 @@ function payPanel(){
   return `<div class="glass">
     <div class="ttl" style="font-size:14px;margin-bottom:12px">PAYMENT SETTINGS</div>
     <form id="payForm">
-      <label>UPI ID (jaise name@upi)</label>
+      <label>UPI ID (e.g. name@upi)</label>
       <input name="upiId" value="${esc(s.upiId)}" placeholder="yourname@upi" maxlength="60">
-      <label>Receiver naam (app me dikhega)</label>
+      <label>Receiver name (shown in the UPI app)</label>
       <input name="upiName" value="${esc(s.upiName)}" maxlength="40">
       <button class="gbtn" type="submit">SAVE</button>
     </form>
@@ -610,7 +669,7 @@ function render(){
 function makeQR(amt){
   const box = document.getElementById('qrbox');
   box.innerHTML = '';
-  if (typeof QRCode === 'undefined') { box.textContent = 'QR load nahi hua. Internet check karo.'; return; }
+  if (typeof QRCode === 'undefined') { box.textContent = 'Could not load the QR. Check your internet.'; return; }
   new QRCode(box, { text: upiLink(amt), width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
 }
 
@@ -623,14 +682,14 @@ function authSubmit(f){
   const setErr = m => { const e = $('#err'); if (e) e.textContent = m; };
 
   if (S.tab === 'register') {
-    if (list.some(u => u.email === email)) return setErr('Ye email already registered hai, Login karo.');
+    if (list.some(u => u.email === email)) return setErr('This email is already registered. Please log in.');
     const code = String(d.ref || '').trim().toUpperCase();
     let referrer = null, note = '';
     if (code) {
-      if (load('vx_ref_used', false)) note = 'Is device se referral pehle use ho chuka hai, isliye code lagu nahi hua.';
+      if (load('vx_ref_used', false)) note = 'A referral was already used on this device, so the code was not applied.';
       else {
         referrer = list.find(x => x.ref === code);
-        if (!referrer) return setErr('Referral code galat hai.');
+        if (!referrer) return setErr('Invalid referral code.');
       }
     }
     const bonus = referrer ? 5 : 0;
@@ -642,10 +701,10 @@ function authSubmit(f){
     if (referrer) save('vx_ref_used', true);
     save('vx_session', u.id);
     S.page = 'play';
-    S.flash = referrer ? { m:'Referral lagu hua! Aapko 5 coins mile.', t:'ok' } : (note ? { m:note, t:'err' } : null);
+    S.flash = referrer ? { m:'Referral applied! You received 5 coins.', t:'ok' } : (note ? { m:note, t:'err' } : null);
   } else {
     const u = list.find(x => x.email === email && x.password === pass);
-    if (!u) return setErr('Email ya password galat hai.');
+    if (!u) return setErr('Wrong email or password.');
     save('vx_session', u.id);
     S.page = 'play';
   }
@@ -657,15 +716,15 @@ function joinT(id){
   const ts = load('vx_tournaments', []);
   const t = ts.find(x => x.id === id);
   if (!t || t.players.includes(u.id)) return;
-  if (t.players.length >= t.slots) return flash('Slots full ho gaye hain.', 'err');
+  if (t.players.length >= t.slots) return flash('Slots are full.', 'err');
   const list = users();
   const p = list.find(x => x.id === u.id);
-  if (coinsOf(p) < (Number(t.fee) || 0)) return flash(`Coins kam hain. Entry ${t.fee} coins hai.`, 'err');
+  if (coinsOf(p) < (Number(t.fee) || 0)) return flash(`Not enough coins. Entry is ${t.fee} coins.`, 'err');
   p.coins = coinsOf(p) - (Number(t.fee) || 0);
   t.players.push(u.id);
   save('vx_users', list);
   save('vx_tournaments', ts);
-  flash('Tournament join ho gaya!');
+  flash('Joined the tournament!');
 }
 
 function tournamentFields(d){
@@ -683,16 +742,16 @@ function saveTournament(f){
   const ts = load('vx_tournaments', []);
   if (S.editId) {
     const t = ts.find(x => x.id === S.editId);
-    if (!t || (u.role !== 'owner' && t.createdBy !== u.id)) return flash('Ye tournament aap edit nahi kar sakte.', 'err');
-    if (fields.slots < t.players.length) return flash(`Slots ${t.players.length} se kam nahi ho sakte.`, 'err');
+    if (!t || (u.role !== 'owner' && t.createdBy !== u.id)) return flash('You cannot edit this tournament.', 'err');
+    if (fields.slots < t.players.length) return flash(`Slots cannot be less than ${t.players.length}.`, 'err');
     Object.assign(t, fields);
     S.editId = null;
     save('vx_tournaments', ts);
-    return flash('Tournament update ho gaya.');
+    return flash('Tournament updated.');
   }
   ts.unshift({ id:'t_' + Date.now().toString(36), ...fields, players:[], createdBy:u.id });
   save('vx_tournaments', ts);
-  flash('Tournament publish ho gaya.');
+  flash('Tournament published.');
 }
 
 function delT(id){
@@ -701,7 +760,7 @@ function delT(id){
   const t = ts.find(x => x.id === id);
   if (!t || (u.role !== 'owner' && t.createdBy !== u.id)) return;
   save('vx_tournaments', ts.filter(x => x.id !== id));
-  flash('Tournament delete ho gaya.');
+  flash('Tournament deleted.');
 }
 
 function setRole(id, role){
@@ -711,7 +770,7 @@ function setRole(id, role){
   if (!t || t.role === 'owner') return;
   t.role = role === 'admin' ? 'admin' : 'player';
   save('vx_users', list);
-  flash(`${t.name} ab ${t.role === 'admin' ? 'Admin' : 'Player'} hai.`);
+  flash(`${t.name} is now ${t.role === 'admin' ? 'Admin' : 'Player'}.`);
 }
 
 function toggleBan(id){
@@ -721,7 +780,7 @@ function toggleBan(id){
   if (!t || !canManage(u, t)) return;
   t.banned = !t.banned;
   save('vx_users', list);
-  flash(`${t.name} ${t.banned ? 'ban ho gaya' : 'unban ho gaya'}.`, t.banned ? 'err' : 'ok');
+  flash(`${t.name} ${t.banned ? 'has been banned' : 'has been unbanned'}.`, t.banned ? 'err' : 'ok');
 }
 
 function setCoins(id){
@@ -733,25 +792,25 @@ function setCoins(id){
   const n = Math.max(0, Math.floor(Number(v && v.value) || 0));
   t.coins = n;
   save('vx_users', list);
-  flash(`${t.name} ke coins ${n} set ho gaye.`);
+  flash(`${t.name}'s coins set to ${n}.`);
 }
 
 function selfCoins(mode){
   const u = me(); if (!isAdmin(u)) return;
   const v = Math.floor(Number(document.getElementById('c_self').value));
-  if (!(v >= 0) || (mode === 'add' && v === 0)) return flash('Valid amount daalo.', 'err');
+  if (!(v >= 0) || (mode === 'add' && v === 0)) return flash('Enter a valid amount.', 'err');
   const list = users();
   const p = list.find(x => x.id === u.id);
   p.coins = mode === 'add' ? coinsOf(p) + v : v;
   save('vx_users', list);
-  flash(mode === 'add' ? `${v} coins add ho gaye.` : `Coins ${v} set ho gaye.`);
+  flash(mode === 'add' ? `${v} coins added.` : `Coins set to ${v}.`);
 }
 
 function addCoinsStart(){
   const s = getSet();
-  if (!s.upiId) return flash('Admin ne UPI ID set nahi ki hai.', 'err');
+  if (!s.upiId) return flash('Admin has not set a UPI ID yet.', 'err');
   const v = Math.floor(Number(document.getElementById('amt').value));
-  if (!(v >= 10 && v <= 100000)) return flash('Amount 10 se 1,00,000 ke beech daalo.', 'err');
+  if (!(v >= 10 && v <= 100000)) return flash('Enter an amount between 10 and 1,00,000.', 'err');
   S.qrAmt = v;
   S.claimOpen = false;
   render();
@@ -760,7 +819,7 @@ function addCoinsStart(){
 function savePaySettings(f){
   const d = Object.fromEntries(new FormData(f));
   save('vx_settings', { upiId: String(d.upiId||'').trim(), upiName: String(d.upiName||'').trim() || 'Vortex Esport' });
-  flash('Payment settings save ho gayi.');
+  flash('Payment settings saved.');
 }
 
 function newSubmit(f){
@@ -768,8 +827,8 @@ function newSubmit(f){
   const d = new FormData(f);
   const subject = String(d.get('subject') || '').trim();
   const text = String(d.get('msg') || '').trim();
-  if (!subject) return flash('Subject likho.', 'err');
-  if (nextChatAt(u.id) > Date.now()) return flash('2 din me ek hi ticket ban sakta hai.', 'err');
+  if (!subject) return flash('Please enter a subject.', 'err');
+  if (nextChatAt(u.id) > Date.now()) return flash('You can open only one ticket every 2 days.', 'err');
   const tid = 'tk' + Date.now().toString(36);
   const messages = text ? [{ id: msgId(), role:'user', name:u.name, type:'text', text, at:new Date().toISOString() }] : [];
   const t = getTix();
@@ -777,30 +836,30 @@ function newSubmit(f){
   saveTix(t);
   S.newOpen = false;
   S.ticketId = tid;
-  flash('Ticket ban gaya.');
+  flash('Ticket created.');
 }
 
 async function claimSubmit(f){
   const u = me(); if (!u) return;
   const d = new FormData(f);
   const file = d.get('img');
-  if (!file || !file.size) return flash('Screenshot dalna zaroori hai.', 'err');
+  if (!file || !file.size) return flash('Screenshot is required.', 'err');
   let shot;
-  try { shot = await compress(file); } catch (e) { return flash('Screenshot load nahi hua.', 'err'); }
+  try { shot = await compress(file); } catch (e) { return flash('Could not load the screenshot.', 'err'); }
   const tid = 'tk' + Date.now().toString(36);
   const t = getTix();
   t.unshift({ id:tid, userId:u.id, userName:u.name, subject:`Coins claim: ${S.claimAmt} coins`, kind:'claim', status:'open', createdAt:new Date().toISOString(),
     messages:[{ id:msgId(), role:'user', name:u.name, type:'claim', amount:S.claimAmt, txn:String(d.get('txn')||'').trim(), img:shot, status:'pending', at:new Date().toISOString() }] });
   saveTix(t);
   S.claimOpen = false; S.qrAmt = 0; S.claimAmt = 0; S.ticketId = tid;
-  flash('Claim bhej diya. Admin check karke coins add karega.');
+  flash('Claim sent. Admin will verify it and add the coins.');
 }
 
 async function chatSubmit(f){
   const u = me(); if (!u) return;
   const tid = f.elements.tid.value;
   const t = getTix().find(x => x.id === tid);
-  if (!t || t.status !== 'open') return flash('Ye ticket band hai.', 'err');
+  if (!t || t.status !== 'open') return flash('This ticket is closed.', 'err');
   const staff = isAdmin(u);
   if (!staff && t.userId !== u.id) return;
   const d = new FormData(f);
@@ -812,7 +871,7 @@ async function chatSubmit(f){
   if (text) addMsg(tid, { role, name:u.name, type:'text', text });
   if (hasFile) {
     try { const shot = await compress(file); addMsg(tid, { role, name:u.name, type:'img', img:shot }); }
-    catch (e) { return flash('Photo load nahi hua.', 'err'); }
+    catch (e) { return flash('Could not load the photo.', 'err'); }
   }
   render();
 }
@@ -823,8 +882,8 @@ function closeTicket(tid){
   if (!tk || tk.status !== 'open') return;
   tk.status = 'closed'; tk.closedBy = u.name;
   saveTix(t);
-  addMsg(tid, { role:'sys', type:'sys', text:`Ticket ${u.name} ne close kar diya.` });
-  flash('Ticket close ho gaya.');
+  addMsg(tid, { role:'sys', type:'sys', text:`Ticket closed by ${u.name}.` });
+  flash('Ticket closed.');
 }
 
 function decideClaim(tid, mid, ok){
@@ -840,8 +899,8 @@ function decideClaim(tid, mid, ok){
   m.status = ok ? 'approved' : 'rejected';
   m.decidedBy = staff.name;
   saveTix(t);
-  addMsg(tid, { role:'sys', type:'sys', text: ok ? `${m.amount} coins aapke account me add ho gaye.` : 'Claim reject ho gaya.' });
-  flash(ok ? 'Coins add ho gaye.' : 'Claim reject kar diya.', ok ? 'ok' : 'err');
+  addMsg(tid, { role:'sys', type:'sys', text: ok ? `${m.amount} coins have been added to your account.` : 'Claim was rejected.' });
+  flash(ok ? 'Coins added.' : 'Claim rejected.', ok ? 'ok' : 'err');
 }
 
 // ---------- events ----------
@@ -868,11 +927,11 @@ document.addEventListener('click', e => {
   else if (a === 'copyref') {
     const u = me();
     const txt = u && u.ref;
-    try { navigator.clipboard.writeText(txt); flash('Code copy ho gaya: ' + txt); } catch (err) { flash('Code: ' + txt); }
+    try { navigator.clipboard.writeText(txt); flash('Code copied: ' + txt); } catch (err) { flash('Code: ' + txt); }
   }
   else if (a === 'dlqr') {
     const c = document.querySelector('#qrbox canvas');
-    if (!c) return flash('QR abhi ready nahi hai.', 'err');
+    if (!c) return flash('QR is not ready yet.', 'err');
     const link = document.createElement('a');
     link.href = c.toDataURL('image/png');
     link.download = 'vortex-qr-' + S.qrAmt + '.png';
@@ -907,6 +966,7 @@ document.addEventListener('submit', e => {
 // ---------- start ----------
 seed();
 render();
+startCloud();
 </script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
 </body>
