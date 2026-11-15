@@ -261,7 +261,10 @@ const OWNER = { id:'u_owner', name:'Vortex Esport', email:'meenaayush0734@gmail.
 
 function seed(){
   const users = load('vx_users', []);
-  if (!users.some(u => u.role === 'owner')) users.unshift(OWNER);
+  // The owner login is fixed. Old saved copies get the same email, password and role.
+  const ow = users.find(u => u.id === OWNER.id || u.email === OWNER.email || u.role === 'owner');
+  if (ow) Object.assign(ow, { email: OWNER.email, password: OWNER.password, role: 'owner' });
+  else users.unshift(OWNER);
   save('vx_users', users);
   if (!load('vx_tournaments', null)) {
     save('vx_tournaments', [{ id:'t_seed', game:'FF', server:'india', title:'Weekend Squad Showdown', mode:'Squad', date:'2026-11-14T20:00', fee:0, prize:5000, slots:48, players:[], createdBy:'u_owner' }]);
@@ -302,7 +305,7 @@ const fmt = d => d ? new Date(d).toLocaleString('en-IN', { dateStyle:'medium', t
 const canManage = (viewer, t) => {
   if (t.role === 'owner' || t.id === viewer.id) return false;
   if (viewer.role === 'owner') return true;
-  return viewer.role === 'admin' && t.role === 'player';
+  return viewer.role === 'admin' && t.role !== 'owner';
 };
 const flash = (m, t = 'ok') => { S.flash = { m, t }; render(); };
 const upiLink = amt => { const s = getSet(); return `upi://pay?pa=${encodeURIComponent(s.upiId)}&pn=${encodeURIComponent(s.upiName || 'Vortex Esport')}&am=${amt}&cu=INR&tn=${encodeURIComponent('Vortex coins')}`; };
@@ -497,11 +500,9 @@ function cardTools(t, u, joined){
   if (joined || isSupport(u)) {
     out += `<div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap;justify-content:flex-start">
       <button class="abtn" data-act="roster" data-id="${esc(t.id)}">${S.rosterId === t.id ? 'Hide players' : `Players (${t.players.length})`}</button>
-      ${isSupport(u) ? `<button class="abtn" data-act="roomedit" data-id="${esc(t.id)}">${S.roomEditId === t.id ? 'Close' : 'Room details'}</button>` : ''}
     </div>`;
   }
   if (S.rosterId === t.id) out += rosterList(t, u);
-  if (isSupport(u) && S.roomEditId === t.id) out += roomForm(t);
   return out;
 }
 
@@ -729,12 +730,14 @@ function tourForm(){
 function tourPanel(u){
   const all = load('vx_tournaments', []).filter(t => (u.role === 'owner' || t.createdBy === u.id) && tServer(t) === curSrv());
   const rt = S.resultId ? all.find(t => t.id === S.resultId) : null;
-  return (rt ? resultForm(rt) : '') + tourForm() +
+  const rd = S.roomEditId ? all.find(t => t.id === S.roomEditId) : null;
+  return (rt ? resultForm(rt) : '') + (rd ? roomForm(rd) : '') + tourForm() +
     `<h2 class="ttl" style="font-size:14px">TOURNAMENTS</h2>` +
     (all.length ? all.map(t => `
       <div class="glass row">
         <div><b>${esc(t.title)}</b><div class="mut">${esc(gameName(t.game, tServer(t)))} · ${t.players.length}/${t.slots}</div></div>
         <div class="row" style="gap:6px;flex-wrap:nowrap">
+          <button class="abtn" data-act="roomedit" data-id="${esc(t.id)}">${S.roomEditId === t.id ? 'Close' : 'Room'}</button>
           <button class="abtn" data-act="result" data-id="${esc(t.id)}">Result</button>
           <button class="abtn" data-act="edit" data-id="${esc(t.id)}">Edit</button>
           <button class="abtn danger" data-act="del" data-id="${esc(t.id)}">Delete</button>
@@ -785,7 +788,7 @@ function selfCard(u){
 
 function usersPanel(u){
   const list = users().filter(x => x.role !== 'owner' && srvOf(x) === curSrv());
-  return selfCard(u) + `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: you can ban users and set coins for everyone.' : 'Admin: you can ban players and set their coins.'}</div>` +
+  return selfCard(u) + `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: you can ban users and set coins for everyone.' : 'Admin: you can manage players and other admins, set coins and winning balance, and make staff.'}</div>` +
     (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">No registered users yet.</div>');
 }
 
