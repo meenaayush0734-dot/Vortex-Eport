@@ -262,9 +262,9 @@ const OWNER = { id:'u_owner', name:'Vortex Esport', email:'meenaayush0734@gmail.
 function seed(){
   const users = load('vx_users', []);
   // The owner login is fixed. Old saved copies get the same email, password and role.
-  const ow = users.find(u => u.id === OWNER.id || u.email === OWNER.email || u.role === 'owner');
+  const ow = users.find(u => u.id === OWNER.id || u.email === OWNER.email);
   if (ow) Object.assign(ow, { email: OWNER.email, password: OWNER.password, role: 'owner' });
-  else users.unshift(OWNER);
+  else if (!users.some(u => u.role === 'owner')) users.unshift(OWNER);
   save('vx_users', users);
   if (!load('vx_tournaments', null)) {
     save('vx_tournaments', [{ id:'t_seed', game:'FF', server:'india', title:'Weekend Squad Showdown', mode:'Squad', date:'2026-11-14T20:00', fee:0, prize:5000, slots:48, players:[], createdBy:'u_owner' }]);
@@ -303,7 +303,7 @@ const isSupport = u => isAdmin(u) || (!!u && u.role === 'staff');
 const EMOJIS = ['😀','😂','😍','😎','🔥','👍','👏','😭','😡','🎮','🏆','💯','🙏','😅','🤝','👀','💀','🚀','✅','❌','💰','🎯','😤','🥳'];
 const fmt = d => d ? new Date(d).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : '-';
 const canManage = (viewer, t) => {
-  if (t.role === 'owner' || t.id === viewer.id) return false;
+  if (t.id === viewer.id) return false;
   if (viewer.role === 'owner') return true;
   return viewer.role === 'admin' && t.role !== 'owner';
 };
@@ -747,8 +747,8 @@ function tourPanel(u){
 
 function userRow(x, viewer){
   const can = canManage(viewer, x);
-  const canRole = viewer.role === 'owner' ? x.role !== 'owner' : (viewer.role === 'admin' && ['player', 'staff'].includes(x.role));
-  const roleOpts = viewer.role === 'owner' ? ['player', 'staff', 'admin'] : ['player', 'staff'];
+  const canRole = x.id !== viewer.id && (viewer.role === 'owner' ? true : (viewer.role === 'admin' && ['player', 'staff'].includes(x.role)));
+  const roleOpts = viewer.role === 'owner' ? ['player', 'staff', 'admin', 'owner'] : ['player', 'staff'];
   const roleCtl = canRole
     ? `<select class="sel" data-act="role" data-id="${esc(x.id)}">${roleOpts.map(r => `<option value="${r}" ${x.role === r ? 'selected' : ''}>${roleLabel(r)}</option>`).join('')}</select>`
     : `<span class="mut">${roleLabel(x.role)}</span>`;
@@ -787,7 +787,7 @@ function selfCard(u){
 }
 
 function usersPanel(u){
-  const list = users().filter(x => x.role !== 'owner' && srvOf(x) === curSrv());
+  const list = users().filter(x => (x.role !== 'owner' || (u.role === 'owner' && x.id !== u.id)) && srvOf(x) === curSrv());
   return selfCard(u) + `<div class="mut" style="margin-bottom:12px">${u.role==='owner' ? 'Owner: you can ban users and set coins for everyone.' : 'Admin: you can manage players and other admins, set coins and winning balance, and make staff.'}</div>` +
     (list.length ? list.map(x => userRow(x, u)).join('') : '<div class="empty">No registered users yet.</div>');
 }
@@ -1505,8 +1505,9 @@ function setRole(id, role){
   const u = me(); if (!isAdmin(u)) return;
   const list = users();
   const t = list.find(x => x.id === id);
-  if (!t || t.role === 'owner' || t.id === u.id) return;
-  const allowed = u.role === 'owner' ? ['player', 'staff', 'admin'] : ['player', 'staff'];
+  if (!t || t.id === u.id) return;
+  if (u.role !== 'owner' && t.role === 'owner') return;
+  const allowed = u.role === 'owner' ? ['player', 'staff', 'admin', 'owner'] : ['player', 'staff'];
   if (!allowed.includes(role)) return;
   if (u.role === 'admin' && !['player', 'staff'].includes(t.role)) return;
   t.role = role;
