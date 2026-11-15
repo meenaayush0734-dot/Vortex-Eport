@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#040208;--app:#07040F;--text:#F4F1FF;--text2:#D9D2F2;--fill:rgba(255,255,255,.05);--fill2:rgba(255,255,255,.06);--glass1:rgba(255,255,255,.07);--glass2:rgba(255,255,255,.02);--nav:rgba(18,12,34,.88);--a1:#A855F7;--a2:#6366F1;--line:rgba(167,139,250,.2);--gold:#FACC15;--red:#FF4D6D;--ok:#4ADE80;--cyan:#22D3EE;--mut:#9C92BD;--glow:rgba(124,58,237,.45);--glow2:rgba(34,211,238,.12);--shadow:rgba(139,92,246,.45);--hero1:#4C1D95;--hero2:#1D4ED8;--brandc:#22D3EE}
+:root{--navglass:rgba(20,16,40,.28);--bg:#040208;--app:#07040F;--text:#F4F1FF;--text2:#D9D2F2;--fill:rgba(255,255,255,.05);--fill2:rgba(255,255,255,.06);--glass1:rgba(255,255,255,.07);--glass2:rgba(255,255,255,.02);--nav:rgba(18,12,34,.88);--a1:#A855F7;--a2:#6366F1;--line:rgba(167,139,250,.2);--gold:#FACC15;--red:#FF4D6D;--ok:#4ADE80;--cyan:#22D3EE;--mut:#9C92BD;--glow:rgba(124,58,237,.45);--glow2:rgba(34,211,238,.12);--shadow:rgba(139,92,246,.45);--hero1:#4C1D95;--hero2:#1D4ED8;--brandc:#22D3EE}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text)}
 #app{max-width:420px;min-height:100vh;margin:0 auto;padding-bottom:110px;background:radial-gradient(circle at 85% -5%,var(--glow),transparent 45%),radial-gradient(circle at 0% 40%,var(--glow2),transparent 40%),var(--app)}
@@ -119,7 +119,7 @@ select.sel{width:auto;height:38px;margin:0;padding:0 10px;font-size:13px}
 .thread{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-radius:16px;margin-bottom:8px;cursor:pointer;background:var(--fill);border:1px solid var(--line);width:100%;color:inherit;font-family:inherit;text-align:left}
 .fileBtn{position:relative;overflow:hidden}
 .fileBtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;padding:0;cursor:pointer}
-nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;height:66px;border-radius:24px;background:var(--nav);backdrop-filter:blur(12px);border:1px solid var(--line);display:flex;padding:6px;gap:4px;z-index:5}
+nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:396px;height:66px;border-radius:24px;background:var(--navglass);backdrop-filter:blur(18px) saturate(170%);-webkit-backdrop-filter:blur(18px) saturate(170%);border:1px solid var(--line);display:flex;padding:6px;gap:4px;z-index:5}
 nav button{flex:1;border:0;background:none;color:var(--mut);font-family:inherit;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:18px;cursor:pointer}
 nav button i{font-style:normal;font-size:18px}
 nav button.on{color:#fff;background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 0 16px var(--shadow)}
@@ -441,7 +441,7 @@ function banView(){
   </div></div>`;
 }
 
-function tCard(t, u){
+function tCard(t, u, where = 'play'){
   const joined = t.players.includes(u.id);
   const full = t.players.length >= t.slots;
   const pct = Math.min(100, Math.round(t.players.length / t.slots * 100));
@@ -461,7 +461,7 @@ function tCard(t, u){
       </div>
       <div class="bar"><i style="width:${pct}%"></i></div>
       <div class="row"><span class="mut">${t.fee ? 'Entry '+t.fee+' coins' : 'Free entry'}</span>${btn}</div>
-      ${roomBlock(t, u, joined)}
+      ${where === 'matches' && joined ? matchInfo(t, u) : ''}
       ${cardTools(t, u, joined)}
     </div>
   </div>`;
@@ -505,6 +505,10 @@ function cardTools(t, u, joined){
   return out;
 }
 
+function matchInfo(t, u){
+  const open = S.infoId === t.id;
+  return `<div class="row" style="margin-top:12px"><button class="abtn" data-act="info" data-id="${esc(t.id)}">${open ? 'Hide info' : 'Info'}</button></div>` + (open ? roomBlock(t, u, true) : '');
+}
 function roomBlock(t, u, joined){
   const staff = isSupport(u);
   if (!joined && !staff) return '';
@@ -522,9 +526,9 @@ function qa(icon, label, page){
 }
 
 function matchesView(u){
-  const ts = load('vx_tournaments', []).filter(t => t.players.includes(u.id));
+  const ts = load('vx_tournaments', []).filter(t => t.players.includes(u.id) && tServer(t) === curSrv());
   return `<h2 class="ttl">MY MATCHES</h2>` +
-    (ts.length ? ts.map(t => tCard(t, u)).join('') : '<div class="empty">You have not joined any tournament yet.</div>');
+    (ts.length ? ts.map(t => tCard(t, u, 'matches')).join('') : '<div class="empty">You have not joined any tournament yet.</div>');
 }
 
 // ----- support tickets -----
@@ -740,7 +744,7 @@ function tourPanel(u){
 
 function userRow(x, viewer){
   const can = canManage(viewer, x);
-  const canRole = viewer.role === 'owner' ? x.role !== 'owner' : (viewer.role === 'admin' && x.role === 'player');
+  const canRole = viewer.role === 'owner' ? x.role !== 'owner' : (viewer.role === 'admin' && ['player', 'staff'].includes(x.role));
   const roleOpts = viewer.role === 'owner' ? ['player', 'staff', 'admin'] : ['player', 'staff'];
   const roleCtl = canRole
     ? `<select class="sel" data-act="role" data-id="${esc(x.id)}">${roleOpts.map(r => `<option value="${r}" ${x.role === r ? 'selected' : ''}>${roleLabel(r)}</option>`).join('')}</select>`
@@ -752,9 +756,20 @@ function userRow(x, viewer){
       <span class="badge ${x.banned?'bad':'good'}">${x.banned?'BANNED':'ACTIVE'}</span>
     </div>
     <div class="row" style="margin-top:12px"><span class="coinchip">${ICON.coin} ${coinsOf(x)}</span>${roleCtl}</div>
-    <div class="row" style="margin-top:12px">
-      <input class="inp" id="c_${esc(x.id)}" type="number" min="0" value="${coinsOf(x)}" ${can?'':'disabled'}>
-      <button class="abtn" data-act="coins" data-id="${esc(x.id)}" ${can?'':'disabled'}>Set coins</button>
+    <div class="row" style="margin-top:12px;gap:6px;flex-wrap:wrap">
+      <input class="inp" id="c_${esc(x.id)}" type="number" min="0" value="${coinsOf(x)}" ${can?'':'disabled'} style="flex:1 1 90px">
+      <button class="abtn" data-act="coins" data-v="set" data-id="${esc(x.id)}" ${can?'':'disabled'}>Set</button>
+      <button class="abtn ok" data-act="coins" data-v="add" data-id="${esc(x.id)}" ${can?'':'disabled'}>Add</button>
+      <button class="abtn danger" data-act="coins" data-v="remove" data-id="${esc(x.id)}" ${can?'':'disabled'}>Remove</button>
+    </div>
+    <div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap">
+      <span class="mut" style="font-size:12px;flex:1 1 100%">Winning balance: ${curOf(srvOf(x))}${userStats(x).winnings}</span>
+      <input class="inp" id="w_${esc(x.id)}" type="number" min="0" value="0" ${can && isAdmin(viewer)?'':'disabled'} style="flex:1 1 90px">
+      <button class="abtn" data-act="winadj" data-v="set" data-id="${esc(x.id)}" ${can && isAdmin(viewer)?'':'disabled'}>Set</button>
+      <button class="abtn ok" data-act="winadj" data-v="add" data-id="${esc(x.id)}" ${can && isAdmin(viewer)?'':'disabled'}>Add</button>
+      <button class="abtn danger" data-act="winadj" data-v="remove" data-id="${esc(x.id)}" ${can && isAdmin(viewer)?'':'disabled'}>Remove</button>
+    </div>
+    <div class="row" style="margin-top:10px">
       <button class="abtn ${x.banned?'':'danger'}" data-act="ban" data-id="${esc(x.id)}" ${can?'':'disabled'}>${x.banned?'Unban':'Ban'}</button>
     </div>
   </div>`;
@@ -879,8 +894,9 @@ function userStats(u){
     earned += Number(w.prize) || 0; if (w.pos === 1) wins++;
   }));
   const withdrawn = wdOf(u.id, 'paid', srv), pending = wdOf(u.id, 'pending', srv);
+  const adj = Number((u.winAdj || {})[srv]) || 0;
   return { matches: joined.length, wins, earned, winRate: joined.length ? Math.round(wins / joined.length * 100) : 0,
-    winnings: earned - withdrawn - pending, withdrawn, pending, joined };
+    winnings: earned - withdrawn - pending + adj, withdrawn, pending, joined };
 }
 function resultForm(t){
   const list = users();
@@ -917,11 +933,13 @@ function resultLine(t){
 }
 
 // ---------- withdrawals (manual payout by admin) ----------
+function wdLabel(srv){ return srv === 'pakistan' ? 'Your EasyPaisa or JazzCash number' : srv === 'nepal' ? 'Your eSewa or Khalti ID' : 'Your UPI ID'; }
+function wdPh(srv){ return srv === 'pakistan' ? '03XX XXXXXXX' : srv === 'nepal' ? 'eSewa or Khalti ID' : 'name@upi'; }
 function wdForm(u, s){
   return `<div class="glass"><div class="ttl" style="font-size:14px;margin-bottom:10px">WITHDRAW WINNINGS</div>
     <form id="wdForm"><label>Amount (min ${CUR()}50 · available ${CUR()}${s.winnings})</label>
       <input name="amount" type="number" min="50" value="${s.winnings >= 50 ? s.winnings : 50}">
-      <label>Your UPI ID</label><input name="upi" maxlength="60" placeholder="name@upi">
+      <label>${wdLabel(srvOf(u))}</label><input name="upi" maxlength="60" placeholder="${wdPh(srvOf(u))}">
       <button class="gbtn" type="submit">REQUEST WITHDRAWAL</button></form></div>`;
 }
 function wdRequest(f){
@@ -1210,7 +1228,8 @@ function applyPrefs(){
     '--glass1':t.glass1, '--glass2':t.glass2, '--nav':t.nav, '--gold':t.gold, '--ok':t.ok, '--a1':c.a1, '--a2':c.a2, '--cyan':c.cy,
     '--line': base === 'light' ? hexA(c.a2, .3) : hexA(c.a1, .25),
     '--shadow': hexA(c.a1, .45), '--glow': hexA(c.a1, .45), '--glow2': hexA(c.cy, .14),
-    '--hero1': c.a2, '--hero2': c.a1, '--brandc': base === 'light' ? c.a1 : c.cy };
+    '--hero1': c.a2, '--hero2': c.a1, '--brandc': base === 'light' ? c.a1 : c.cy,
+    '--navglass': base === 'light' ? 'rgba(255,255,255,.45)' : 'rgba(20,16,40,.28)' };
   const r = document.documentElement.style;
   Object.entries(vars).forEach(([k, v]) => r.setProperty(k, v));
   document.documentElement.dataset.theme = base;
@@ -1486,7 +1505,7 @@ function setRole(id, role){
   if (!t || t.role === 'owner' || t.id === u.id) return;
   const allowed = u.role === 'owner' ? ['player', 'staff', 'admin'] : ['player', 'staff'];
   if (!allowed.includes(role)) return;
-  if (u.role === 'admin' && t.role !== 'player') return;
+  if (u.role === 'admin' && !['player', 'staff'].includes(t.role)) return;
   t.role = role;
   save('vx_users', list);
   flash(`${t.name} is now ${roleLabel(t.role)}.`);
@@ -1502,16 +1521,39 @@ function toggleBan(id){
   flash(`${t.name} ${t.banned ? 'has been banned' : 'has been unbanned'}.`, t.banned ? 'err' : 'ok');
 }
 
-function setCoins(id){
+function setCoins(id, mode = 'set'){
   const u = me(); if (!u) return;
   const list = users();
   const t = list.find(x => x.id === id);
   if (!t || !canManage(u, t)) return;
   const v = document.getElementById('c_' + id);
   const n = Math.max(0, Math.floor(Number(v && v.value) || 0));
-  setCoinsOf(t, srvOf(t), n);
+  const cur = coinsOf(t);
+  const next = mode === 'add' ? cur + n : mode === 'remove' ? Math.max(0, cur - n) : n;
+  setCoinsOf(t, srvOf(t), next);
   save('vx_users', list);
-  flash(`${t.name}'s coins set to ${n}.`);
+  flash(`${t.name}'s coins are now ${next}.`);
+}
+// Winning balance is earned from results. Admin can set, add or remove it with a manual adjustment per server.
+function winAdjust(id, mode){
+  const u = me(); if (!isAdmin(u)) return;
+  const list = users();
+  const t = list.find(x => x.id === id);
+  if (!t || !canManage(u, t)) return;
+  const v = document.getElementById('w_' + id);
+  const n = Math.max(0, Math.floor(Number(v && v.value) || 0));
+  const srv = srvOf(t);
+  const adj = Number((t.winAdj || {})[srv]) || 0;
+  const base = userStats(t).winnings - adj;
+  let next;
+  if (mode === 'set') next = n - base;
+  else if (mode === 'add') next = adj + n;
+  else next = Math.max(adj - n, -base);
+  t.winAdj = { ...(t.winAdj || {}), [srv]: next };
+  save('vx_users', list);
+  const now = userStats(t).winnings;
+  addNote(t.id, 'Winning balance updated', `Your winning balance is now ${curOf(srv)}${now}.`, srv);
+  flash(`${t.name}'s winning balance is now ${curOf(srv)}${now}.`);
 }
 
 function selfCoins(mode){
@@ -1654,7 +1696,7 @@ document.addEventListener('click', e => {
   else if (a === 'canceledit') { S.editId = null; render(); }
   else if (a === 'del') delT(el.dataset.id);
   else if (a === 'ban') toggleBan(el.dataset.id);
-  else if (a === 'coins') setCoins(el.dataset.id);
+  else if (a === 'coins') setCoins(el.dataset.id, el.dataset.v || 'set');
   else if (a === 'selfcoins') selfCoins(el.dataset.v);
   else if (a === 'addcoins') addCoinsStart();
   else if (a === 'genref') generateRef();
@@ -1669,6 +1711,8 @@ document.addEventListener('click', e => {
   else if (a === 'setsub') { S.settingsSub = el.dataset.v || null; render(); }
   else if (a === 'roster') { S.rosterId = S.rosterId === el.dataset.id ? null : el.dataset.id; render(); }
   else if (a === 'roomedit') { S.roomEditId = S.roomEditId === el.dataset.id ? null : el.dataset.id; render(); }
+  else if (a === 'info') { S.infoId = S.infoId === el.dataset.id ? null : el.dataset.id; render(); }
+  else if (a === 'winadj') winAdjust(el.dataset.id, el.dataset.v);
   else if (a === 'emoji') insertEmoji(el.dataset.v);
   else if (a === 'theme') { if (curSrv() !== 'india') return flash('Theme is set by your server.', 'err'); const p = getPrefs(); p.theme = el.dataset.v; savePrefs(p); applyPrefs(); render(); }
   else if (a === 'color') { if (curSrv() !== 'india') return flash('Color is set by your server.', 'err'); const p = getPrefs(); p.color = el.dataset.v; savePrefs(p); applyPrefs(); render(); }
