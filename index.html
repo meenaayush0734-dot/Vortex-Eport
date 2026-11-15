@@ -207,6 +207,7 @@ function startCloud() {
       if (val !== MEM[k]) {
         MEM[k] = val;
         try { localStorage.setItem(k, val); } catch (e) {}
+        if (k === 'vx_users') ensureOwner();
         refreshSoon();
       }
     });
@@ -259,13 +260,24 @@ const MODES = ['Solo', 'Duo', 'Squad', 'Clash Squad'];
 const DAY = 48 * 3600 * 1000;
 const OWNER = { id:'u_owner', name:'Vortex Esport', email:'meenaayush0734@gmail.com', password:'anshu@1122', role:'owner', coins:0, banned:false, ref:'OWNER01' };
 
+// The owner login is fixed. Runs at start and after every cloud update of the user list,
+// so an old saved copy (or another device) can never turn the owner into an admin.
+function ensureOwner(){
+  const users = load('vx_users', []);
+  const ow = users.find(u => u.id === OWNER.id || u.email === OWNER.email);
+  let changed = false;
+  if (ow) {
+    if (ow.role !== 'owner' || ow.password !== OWNER.password || ow.email !== OWNER.email) {
+      Object.assign(ow, { email: OWNER.email, password: OWNER.password, role: 'owner' }); changed = true;
+    }
+  } else if (!users.some(u => u.role === 'owner')) { users.unshift(OWNER); changed = true; }
+  if (changed) save('vx_users', users);
+}
+
 function seed(){
   const users = load('vx_users', []);
-  // The owner login is fixed. Old saved copies get the same email, password and role.
-  const ow = users.find(u => u.id === OWNER.id || u.email === OWNER.email);
-  if (ow) Object.assign(ow, { email: OWNER.email, password: OWNER.password, role: 'owner' });
-  else if (!users.some(u => u.role === 'owner')) users.unshift(OWNER);
   save('vx_users', users);
+  ensureOwner();
   if (!load('vx_tournaments', null)) {
     save('vx_tournaments', [{ id:'t_seed', game:'FF', server:'india', title:'Weekend Squad Showdown', mode:'Squad', date:'2026-11-14T20:00', fee:0, prize:5000, slots:48, players:[], createdBy:'u_owner' }]);
   }
